@@ -29,6 +29,7 @@ import { CompanyClusterCard } from '../components/Company';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { AnimatedCard } from '../components/Common/AnimatedCard'; // [NEW]
 import { PageTransition, StaggerContainer } from '../components/Layout/PageTransition'; // [NEW]
+import { TrendingProblemCard } from '../components/Overview';
 import { companyService } from '../services/companyService';
 import { topicService } from '../services/topicService';
 import type { CompanyData } from '../types/company';
@@ -280,23 +281,27 @@ export function OverviewPage() {
               </CardContent>
             </AnimatedCard>
 
-            {/* Company Statistics Chart */}
-            <AnimatedCard>
-              <CardContent>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3, fontFamily: 'Outfit, sans-serif' }}>
-                  <BarChartIcon sx={{ mr: 1 }} />
-                  Top Companies by Problem Count
-                </Typography>
-                {loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <LoadingSpinner message="Loading company statistics..." />
-                  </Box>
-                ) : (
-                  <CompanyStatsChart companies={companies} height={400} maxCompanies={10} />
-                )}
-              </CardContent>
-            </AnimatedCard>
+            {/* Trending Problem Spotlight */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' }, gap: 3 }}>
+              <TrendingProblemCard />
+              <AnimatedCard>
+                <CardContent>
+                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3, fontFamily: 'Outfit, sans-serif' }}>
+                    <BarChartIcon sx={{ mr: 1 }} />
+                    Top Companies by Problem Count
+                  </Typography>
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <LoadingSpinner message="Loading company statistics..." />
+                    </Box>
+                  ) : (
+                    <CompanyStatsChart companies={companies} height={400} maxCompanies={10} />
+                  )}
+                </CardContent>
+              </AnimatedCard>
+            </Box>
 
+            {/* Frequency Overview */}
             <AnimatedCard>
               <CardContent>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Outfit, sans-serif' }}>

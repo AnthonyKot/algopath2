@@ -1,0 +1,1 @@
+export { TrendingProblemCard } from './TrendingProblemCard';

@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import type { ProblemData } from '../../types/company';
 import BookmarkButton from '../Common/BookmarkButton';
+import { getFrequencyStars, renderStars, getFrequencyColor } from '../../utils/frequencyRating';
 
 interface ProblemsTableProps {
   problems: ProblemData[];
@@ -45,27 +46,27 @@ const getQualityTier = (problem: ProblemData): string => {
   }
 
   const { originalityScore, totalVotes, likes } = problem;
-  
+
   // Hidden Gems: High originality (>0.85), low exposure (<1000 votes), decent likes (>50)
   if (originalityScore > 0.85 && totalVotes < 1000 && likes > 50) {
     return 'hidden-gem';
   }
-  
+
   // Rising Stars: High originality (>0.8), moderate exposure (1000-5000), growing likes
   if (originalityScore > 0.8 && totalVotes >= 1000 && totalVotes <= 5000 && likes > 100) {
     return 'rising-star';
   }
-  
+
   // Interview Classics: High likes (>1000), high exposure (>5000)
   if (likes > 1000 && totalVotes > 5000) {
     return 'interview-classic';
   }
-  
+
   // Controversial: Low originality (<0.7)
   if (originalityScore < 0.7) {
     return 'controversial';
   }
-  
+
   return 'standard';
 };
 
@@ -77,11 +78,11 @@ const QualityBadge: React.FC<{ tier: string; size?: 'small' | 'medium' }> = ({ t
     'controversial': { icon: <WarningIcon />, color: '#F44336', label: 'Controversial' },
     'standard': { icon: null, color: '#9E9E9E', label: 'Standard' }
   };
-  
+
   const { icon, color, label } = config[tier as keyof typeof config] || config.standard;
-  
+
   if (!icon) return null;
-  
+
   return (
     <Tooltip title={label}>
       <Box sx={{ color, display: 'inline-flex', alignItems: 'center' }}>
@@ -91,9 +92,9 @@ const QualityBadge: React.FC<{ tier: string; size?: 'small' | 'medium' }> = ({ t
   );
 };
 
-export function ProblemsTable({ 
-  problems, 
-  maxHeight = 400, 
+export function ProblemsTable({
+  problems,
+  maxHeight = 400,
   showQualityBadges = false,
   showBookmarks = true,
   onProblemSelect
@@ -156,9 +157,10 @@ export function ProblemsTable({
 
   const formatFrequency = (value?: number) => {
     if (typeof value !== 'number' || Number.isNaN(value)) {
-      return '—';
+      return { display: '—', stars: 0, label: '' };
     }
-    return value.toFixed(1);
+    const { stars, label } = getFrequencyStars(value);
+    return { display: renderStars(stars), stars, label };
   };
 
   if (problems.length === 0) {
@@ -172,9 +174,9 @@ export function ProblemsTable({
   }
 
   return (
-    <TableContainer 
-      component={Paper} 
-      sx={{ 
+    <TableContainer
+      component={Paper}
+      sx={{
         maxHeight,
         '& .MuiTableCell-head': {
           backgroundColor: 'grey.50',
@@ -209,10 +211,10 @@ export function ProblemsTable({
                 direction={sortField === 'companyCount' ? sortOrder : 'desc'}
                 onClick={() => handleSort('companyCount')}
               >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <GroupsIcon sx={{ mr: 0.5, fontSize: 16 }} />
-                    Companies Asked
-                  </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GroupsIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                  Companies Asked
+                </Box>
               </TableSortLabel>
             </TableCell>
             <TableCell align="center">
@@ -230,7 +232,7 @@ export function ProblemsTable({
         </TableHead>
         <TableBody>
           {sortedProblems.map((problem, index) => (
-            <TableRow 
+            <TableRow
               key={`${problem.title}-${index}`}
               hover
               role={onProblemSelect ? 'button' : undefined}
@@ -281,9 +283,17 @@ export function ProblemsTable({
                 </Typography>
               </TableCell>
               <TableCell align="center">
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {formatFrequency(problem.frequency)}
-                </Typography>
+                {(() => {
+                  const freq = formatFrequency(problem.frequency);
+                  if (freq.stars === 0) return <Typography variant="body2">—</Typography>;
+                  return (
+                    <Tooltip title={freq.label}>
+                      <Typography variant="body2" sx={{ color: getFrequencyColor(freq.stars), letterSpacing: 1, fontWeight: 500 }}>
+                        {freq.display}
+                      </Typography>
+                    </Tooltip>
+                  );
+                })()}
               </TableCell>
               <TableCell>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
