@@ -1,9 +1,9 @@
 
 import { useState, useEffect, type ReactNode } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Card, 
+import {
+  Box,
+  Typography,
+  Card,
   CardContent,
   Stack,
   Table,
@@ -15,7 +15,7 @@ import {
   Paper,
   Chip
 } from '@mui/material';
-import { 
+import {
   BarChart as BarChartIcon,
   Business as BusinessIcon,
   Quiz as QuizIcon,
@@ -27,6 +27,8 @@ import {
 import { CompanyStatsChart, TopicFrequencyChart, TopicHeatmapChart } from '../components/Charts';
 import { CompanyClusterCard } from '../components/Company';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
+import { AnimatedCard } from '../components/Common/AnimatedCard'; // [NEW]
+import { PageTransition, StaggerContainer } from '../components/Layout/PageTransition'; // [NEW]
 import { companyService } from '../services/companyService';
 import { topicService } from '../services/topicService';
 import type { CompanyData } from '../types/company';
@@ -162,9 +164,9 @@ export function OverviewPage() {
         );
         const filteredCompanyTotals = Array.isArray(data.companyTotals)
           ? filteredCompanies.map((company) => {
-              const index = data.companies.indexOf(company);
-              return index >= 0 ? data.companyTotals![index] ?? 0 : 0;
-            })
+            const index = data.companies.indexOf(company);
+            return index >= 0 ? data.companyTotals![index] ?? 0 : 0;
+          })
           : undefined;
 
         const missingCompanies = filteredCompanies.filter((company) => !data.companies.includes(company));
@@ -210,236 +212,240 @@ export function OverviewPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Welcome to Interview Prep Dashboard
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Your comprehensive platform for data-driven interview preparation. 
-        Leverage insights from 18,668+ LeetCode problems across 470+ companies 
-        to prepare strategically for technical interviews.
-      </Typography>
+    <PageTransition>
+      <Box>
+        <Typography variant="h4" component="h1" gutterBottom sx={{ fontFamily: 'Outfit, sans-serif' }}>
+          Welcome to Interview Prep Dashboard
+        </Typography>
 
-      <Stack spacing={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Analytics Overview
-            </Typography>
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LoadingSpinner size={36} />
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: 'repeat(1, 1fr)',
-                    sm: 'repeat(2, 1fr)',
-                    lg: 'repeat(4, 1fr)'
-                  },
-                  gap: 3
-                }}
-              >
-                <SummaryTile
-                  icon={<BusinessIcon fontSize="medium" />}
-                  label="Total Companies"
-                  value={derivedMetrics.totalCompanies}
-                  annotation="In dataset"
-                  color="primary"
-                />
-                <SummaryTile
-                  icon={<QuizIcon fontSize="medium" />}
-                  label="Total Problems"
-                  value={derivedMetrics.totalProblems}
-                  annotation="Across dataset"
-                  color="secondary"
-                />
-                <SummaryTile
-                  icon={<TopicIcon fontSize="medium" />}
-                  label="Total Topics"
-                  value={derivedMetrics.totalTopics}
-                  annotation="Unique topics covered"
-                  color="success"
-                />
-                <SummaryTile
-                  icon={<TrendingUpIcon fontSize="medium" />}
-                  label="Avg per Company"
-                  value={derivedMetrics.avgProblemsPerCompany}
-                  annotation="Dataset average"
-                  color="warning"
-                />
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4, fontFamily: 'Inter, sans-serif' }}>
+          Your comprehensive platform for data-driven interview preparation.
+          Leverage insights from 18,668+ LeetCode problems across 470+ companies
+          to prepare strategically for technical interviews.
+        </Typography>
 
-        {/* Company Statistics Chart */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <BarChartIcon sx={{ mr: 1 }} />
-              Top Companies by Problem Count
-            </Typography>
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LoadingSpinner message="Loading company statistics..." />
-              </Box>
-            ) : (
-              <CompanyStatsChart companies={companies} height={400} maxCompanies={10} />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              Frequency Overview
-            </Typography>
-            {topicFrequencies.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LoadingSpinner message="Loading topic frequency..." size={32} />
-              </Box>
-            ) : (
-              <TopicFrequencyChart
-                data={topicFrequencies}
-                height={320}
-                maxTopics={12}
-                showTrendIndicators
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              Topic Trends Analysis
-            </Typography>
-            {trendsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LoadingSpinner message="Analyzing topic trends..." size={32} />
-              </Box>
-            ) : topicTrends.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                Topic trend insights are not available right now.
-              </Typography>
-            ) : (
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Topic</TableCell>
-                      <TableCell align="center">Trend</TableCell>
-                      <TableCell align="right">Total Frequency</TableCell>
-                      <TableCell align="right">Trend Strength</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {topicTrends.slice(0, 5).map((trend, index) => {
-                      const rawStrength = typeof trend.trendStrength === 'number' ? trend.trendStrength : 0;
-                      const absStrength = Math.abs(rawStrength);
-                      const frequency = trend.totalFrequency ?? 0;
-
-                      let direction: 'increasing' | 'decreasing' | 'stable';
-                      if (absStrength < 0.001) {
-                        direction = 'stable';
-                      } else if (rawStrength > 0) {
-                        direction = 'increasing';
-                      } else {
-                        direction = 'decreasing';
-                      }
-
-                      let icon = <TrendingFlatIcon color="action" fontSize="small" />;
-                      let chipColor: 'default' | 'success' | 'error' = 'default';
-                      if (direction === 'increasing') {
-                        icon = <TrendingUpIcon color="success" fontSize="small" />;
-                        chipColor = 'success';
-                      } else if (direction === 'decreasing') {
-                        icon = <TrendingDownIcon color="error" fontSize="small" />;
-                        chipColor = 'error';
-                      }
-
-                      const chipLabel = direction.toUpperCase();
-
-                      return (
-                        <TableRow key={`${trend.topic}-${index}`}>
-                          <TableCell sx={{ fontWeight: 500 }}>{trend.topic}</TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                              {icon}
-                              <Chip
-                                label={chipLabel}
-                                size="small"
-                                variant="outlined"
-                                color={chipColor}
-                                sx={{
-                                  borderColor:
-                                    chipColor === 'success'
-                                      ? 'success.main'
-                                      : chipColor === 'error'
-                                        ? 'error.main'
-                                        : 'divider',
-                                  color:
-                                    chipColor === 'success'
-                                      ? 'success.main'
-                                      : chipColor === 'error'
-                                        ? 'error.main'
-                                        : 'text.secondary'
-                                }}
-                              />
-                            </Box>
-                          </TableCell>
-                          <TableCell align="right">{frequency.toLocaleString()}</TableCell>
-                          <TableCell align="right">{(rawStrength * 100).toFixed(2)}%</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <CompanyClusterCard />
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <BusinessIcon sx={{ mr: 1 }} />
-              Topic-Company Heatmap
-            </Typography>
-            {heatmapLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <LoadingSpinner message="Loading topic heatmap..." />
-              </Box>
-            ) : heatmapAvailable && heatmapData ? (
-              <>
-                <TopicHeatmapChart
-                  data={heatmapData}
-                  height={520}
-                  maxTopics={15}
-                  maxCompanies={12}
-                />
-                {heatmapError && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-                    {heatmapError}
-                  </Typography>
-                )}
-              </>
-            ) : (
-              <Paper elevation={0} sx={{ p: 3, bgcolor: 'action.hover' }}>
-                <Typography variant="body2" color="text.secondary">
-                  {heatmapError || 'Topic heatmap visualization is not yet available.'}
+        <StaggerContainer>
+          <Stack spacing={3}>
+            <AnimatedCard>
+              <CardContent>
+                <Typography variant="h5" gutterBottom sx={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Analytics Overview
                 </Typography>
-              </Paper>
-            )}
-          </CardContent>
-        </Card>
-      </Stack>
-    </Box>
+                {loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <LoadingSpinner size={36} />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: 'repeat(1, 1fr)',
+                        sm: 'repeat(2, 1fr)',
+                        lg: 'repeat(4, 1fr)'
+                      },
+                      gap: 3
+                    }}
+                  >
+                    <SummaryTile
+                      icon={<BusinessIcon fontSize="medium" />}
+                      label="Total Companies"
+                      value={derivedMetrics.totalCompanies}
+                      annotation="In dataset"
+                      color="primary"
+                    />
+                    <SummaryTile
+                      icon={<QuizIcon fontSize="medium" />}
+                      label="Total Problems"
+                      value={derivedMetrics.totalProblems}
+                      annotation="Across dataset"
+                      color="secondary"
+                    />
+                    <SummaryTile
+                      icon={<TopicIcon fontSize="medium" />}
+                      label="Total Topics"
+                      value={derivedMetrics.totalTopics}
+                      annotation="Unique topics covered"
+                      color="success"
+                    />
+                    <SummaryTile
+                      icon={<TrendingUpIcon fontSize="medium" />}
+                      label="Avg per Company"
+                      value={derivedMetrics.avgProblemsPerCompany}
+                      annotation="Dataset average"
+                      color="warning"
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </AnimatedCard>
+
+            {/* Company Statistics Chart */}
+            <AnimatedCard>
+              <CardContent>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3, fontFamily: 'Outfit, sans-serif' }}>
+                  <BarChartIcon sx={{ mr: 1 }} />
+                  Top Companies by Problem Count
+                </Typography>
+                {loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <LoadingSpinner message="Loading company statistics..." />
+                  </Box>
+                ) : (
+                  <CompanyStatsChart companies={companies} height={400} maxCompanies={10} />
+                )}
+              </CardContent>
+            </AnimatedCard>
+
+            <AnimatedCard>
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Outfit, sans-serif' }}>
+                  Frequency Overview
+                </Typography>
+                {topicFrequencies.length === 0 ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <LoadingSpinner message="Loading topic frequency..." size={32} />
+                  </Box>
+                ) : (
+                  <TopicFrequencyChart
+                    data={topicFrequencies}
+                    height={320}
+                    maxTopics={12}
+                    showTrendIndicators
+                  />
+                )}
+              </CardContent>
+            </AnimatedCard>
+
+            <AnimatedCard>
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Outfit, sans-serif' }}>
+                  Topic Trends Analysis
+                </Typography>
+                {trendsLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <LoadingSpinner message="Analyzing topic trends..." size={32} />
+                  </Box>
+                ) : topicTrends.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Topic trend insights are not available right now.
+                  </Typography>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Topic</TableCell>
+                          <TableCell align="center">Trend</TableCell>
+                          <TableCell align="right">Total Frequency</TableCell>
+                          <TableCell align="right">Trend Strength</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {topicTrends.slice(0, 5).map((trend, index) => {
+                          const rawStrength = typeof trend.trendStrength === 'number' ? trend.trendStrength : 0;
+                          const absStrength = Math.abs(rawStrength);
+                          const frequency = trend.totalFrequency ?? 0;
+
+                          let direction: 'increasing' | 'decreasing' | 'stable';
+                          if (absStrength < 0.001) {
+                            direction = 'stable';
+                          } else if (rawStrength > 0) {
+                            direction = 'increasing';
+                          } else {
+                            direction = 'decreasing';
+                          }
+
+                          let icon = <TrendingFlatIcon color="action" fontSize="small" />;
+                          let chipColor: 'default' | 'success' | 'error' = 'default';
+                          if (direction === 'increasing') {
+                            icon = <TrendingUpIcon color="success" fontSize="small" />;
+                            chipColor = 'success';
+                          } else if (direction === 'decreasing') {
+                            icon = <TrendingDownIcon color="error" fontSize="small" />;
+                            chipColor = 'error';
+                          }
+
+                          const chipLabel = direction.toUpperCase();
+
+                          return (
+                            <TableRow key={`${trend.topic}-${index}`}>
+                              <TableCell sx={{ fontWeight: 500 }}>{trend.topic}</TableCell>
+                              <TableCell align="center">
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                                  {icon}
+                                  <Chip
+                                    label={chipLabel}
+                                    size="small"
+                                    variant="outlined"
+                                    color={chipColor}
+                                    sx={{
+                                      borderColor:
+                                        chipColor === 'success'
+                                          ? 'success.main'
+                                          : chipColor === 'error'
+                                            ? 'error.main'
+                                            : 'divider',
+                                      color:
+                                        chipColor === 'success'
+                                          ? 'success.main'
+                                          : chipColor === 'error'
+                                            ? 'error.main'
+                                            : 'text.secondary'
+                                    }}
+                                  />
+                                </Box>
+                              </TableCell>
+                              <TableCell align="right">{frequency.toLocaleString()}</TableCell>
+                              <TableCell align="right">{(rawStrength * 100).toFixed(2)}%</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </CardContent>
+            </AnimatedCard>
+
+            <CompanyClusterCard />
+
+            <AnimatedCard>
+              <CardContent>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3, fontFamily: 'Outfit, sans-serif' }}>
+                  <BusinessIcon sx={{ mr: 1 }} />
+                  Topic-Company Heatmap
+                </Typography>
+                {heatmapLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <LoadingSpinner message="Loading topic heatmap..." />
+                  </Box>
+                ) : heatmapAvailable && heatmapData ? (
+                  <>
+                    <TopicHeatmapChart
+                      data={heatmapData}
+                      height={520}
+                      maxTopics={15}
+                      maxCompanies={12}
+                    />
+                    {heatmapError && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                        {heatmapError}
+                      </Typography>
+                    )}
+                  </>
+                ) : (
+                  <Paper elevation={0} sx={{ p: 3, bgcolor: 'action.hover' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {heatmapError || 'Topic heatmap visualization is not yet available.'}
+                    </Typography>
+                  </Paper>
+                )}
+              </CardContent>
+            </AnimatedCard>
+          </Stack>
+        </StaggerContainer>
+      </Box>
+    </PageTransition>
   );
 }

@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { CompanyData } from '../../types/company';
 
@@ -8,10 +8,10 @@ interface CompanyStatsChartProps {
   maxCompanies?: number;
 }
 
-export function CompanyStatsChart({ 
-  companies, 
-  height = 300, 
-  maxCompanies = 10 
+export function CompanyStatsChart({
+  companies,
+  height = 300,
+  maxCompanies = 10
 }: CompanyStatsChartProps) {
   const theme = useTheme();
 
@@ -63,12 +63,12 @@ export function CompanyStatsChart({
 
   if (companies.length === 0) {
     return (
-      <Box 
-        sx={{ 
-          height, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center' 
+      <Box
+        sx={{
+          height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
         <Typography variant="body2" color="text.secondary">
@@ -91,27 +91,32 @@ export function CompanyStatsChart({
           }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-          <XAxis 
-            dataKey="company" 
+          <XAxis
+            dataKey="company"
             angle={-45}
             textAnchor="end"
             height={60}
             fontSize={12}
             stroke={theme.palette.text.secondary}
           />
-          <YAxis 
+          <YAxis
             fontSize={12}
             stroke={theme.palette.text.secondary}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Bar 
-            dataKey="totalProblems" 
+          <Legend
+            verticalAlign="top"
+            height={36}
+            wrapperStyle={{ paddingBottom: '10px' }}
+          />
+          <Bar
+            dataKey="totalProblems"
             fill={theme.palette.primary.main}
             radius={[4, 4, 0, 0]}
             name="Total Problems"
           />
-          <Bar 
-            dataKey="uniqueProblems" 
+          <Bar
+            dataKey="uniqueProblems"
             fill={theme.palette.secondary.main}
             radius={[4, 4, 0, 0]}
             name="Unique Problems"

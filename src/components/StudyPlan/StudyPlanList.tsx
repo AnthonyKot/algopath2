@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import type { StudyPlan } from '../../types';
 import { studyPlanService } from '../../services/studyPlanService';
+import { EmptyState } from '../Common/EmptyState';
 
 interface StudyPlanListProps {
   studyPlans: StudyPlan[];
@@ -62,10 +63,10 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
     const startDate = new Date(studyPlan.schedule[0]?.date || studyPlan.createdAt);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + (studyPlan.duration * 7));
-    
+
     const today = new Date();
     const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysRemaining < 0) {
       return { status: 'completed', text: 'Completed' };
     } else if (daysRemaining === 0) {
@@ -127,17 +128,17 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
 
   if (studyPlans.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          No Study Plans Yet
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Create your first study plan to start your interview preparation journey.
-        </Typography>
-        <Button variant="contained" onClick={onCreateNew}>
-          Create Study Plan
-        </Button>
-      </Box>
+      <Card>
+        <EmptyState
+          title="No Study Plans Yet"
+          description="Create your first study plan to start your interview preparation journey. We'll help you build a personalized schedule based on your target companies."
+          icon={<PlayArrowIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.7 }} />}
+          action={{
+            label: 'Create Study Plan',
+            onClick: onCreateNew,
+          }}
+        />
+      </Card>
     );
   }
 
@@ -220,19 +221,19 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
         </MenuItem>
       </Menu>
 
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, 
-        gap: 3 
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+        gap: 3
       }}>
         {studyPlans.map((plan) => {
           const timeRemaining = getTimeRemaining(plan);
           const progress = plan.progress;
-          
+
           return (
-            <Card 
+            <Card
               key={plan.id}
-              sx={{ 
+              sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -250,8 +251,8 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
                     {plan.name}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelect(plan);
@@ -259,8 +260,8 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
                     >
                       <PlayArrowIcon fontSize="small" />
                     </IconButton>
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       color="error"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -278,10 +279,10 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
                     <Chip key={company} label={company} size="small" />
                   ))}
                   {plan.targetCompanies.length > 3 && (
-                    <Chip 
-                      label={`+${plan.targetCompanies.length - 3} more`} 
-                      size="small" 
-                      variant="outlined" 
+                    <Chip
+                      label={`+${plan.targetCompanies.length - 3} more`}
+                      size="small"
+                      variant="outlined"
                     />
                   )}
                 </Stack>

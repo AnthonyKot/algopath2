@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import { StudyPlanForm, StudyPlanView, StudyPlanList, StorageInfo } from '../components/StudyPlan';
 import { LoadingSpinner } from '../components/Common';
+import { PageTransition } from '../components/Layout/PageTransition';
 import { ExportService } from '../services/exportService';
 import { companyService } from '../services/companyService';
 import { studyPlanService } from '../services/studyPlanService';
@@ -63,15 +64,15 @@ export function StudyPlannerPage() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      
+
       // Load companies data
       const companiesData = await companyService.getCompanyStats();
       setCompanies(companiesData);
-      
+
       // Load existing study plans
       const existingPlans = studyPlanService.getStudyPlans();
       setStudyPlans(existingPlans);
-      
+
     } catch (error) {
       console.error('Failed to load initial data:', error);
       setError('Failed to load company data. Some features may be limited.');
@@ -244,7 +245,7 @@ export function StudyPlannerPage() {
   };
 
   const handleUpdatePlan = (updatedPlan: StudyPlan) => {
-    setStudyPlans(prev => 
+    setStudyPlans(prev =>
       prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
     );
     setSelectedPlan(updatedPlan);
@@ -253,12 +254,12 @@ export function StudyPlannerPage() {
   const handleDeletePlan = (planId: string) => {
     studyPlanService.deleteStudyPlan(planId);
     setStudyPlans(prev => prev.filter(plan => plan.id !== planId));
-    
+
     if (selectedPlan?.id === planId) {
       setSelectedPlan(null);
       setViewMode('list');
     }
-    
+
     setSuccessMessage('Study plan deleted successfully.');
   };
 
@@ -287,24 +288,24 @@ export function StudyPlannerPage() {
     try {
       setImporting(true);
       const importedPlans = await ExportService.importStudyPlans(file);
-      
+
       // Add imported plans to existing plans
       const existingPlans = studyPlanService.getStudyPlans();
       const newPlans = importedPlans.filter(
         importedPlan => !existingPlans.some(existing => existing.id === importedPlan.id)
       );
-      
+
       newPlans.forEach(plan => {
         studyPlanService.saveStudyPlan(plan);
       });
-      
+
       // Refresh the study plans list
       const updatedPlans = studyPlanService.getStudyPlans();
       setStudyPlans(updatedPlans);
-      
+
       setSuccessMessage(`Successfully imported ${newPlans.length} study plan(s).`);
       setImportDialogOpen(false);
-      
+
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -325,168 +326,170 @@ export function StudyPlannerPage() {
   }
 
   return (
-    <Box>
-      {/* Page Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Study Planner
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Create personalized study plans based on your target companies and preparation timeline.
-          Track your progress and stay motivated with daily goals and streak tracking.
-        </Typography>
-      </Box>
+    <PageTransition>
+      <Box>
+        {/* Page Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Study Planner
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Create personalized study plans based on your target companies and preparation timeline.
+            Track your progress and stay motivated with daily goals and streak tracking.
+          </Typography>
+        </Box>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Storage Info */}
-      {viewMode === 'list' && (
-        <Box sx={{ mb: 3 }}>
-          <StorageInfo 
-            onExport={() => {
-              try {
-                ExportService.exportMultipleStudyPlans(studyPlans);
-              } catch (error) {
-                console.error('Export failed:', error);
-                setError('Failed to export study plans');
-              }
+        {/* Storage Info */}
+        {viewMode === 'list' && (
+          <Box sx={{ mb: 3 }}>
+            <StorageInfo
+              onExport={() => {
+                try {
+                  ExportService.exportMultipleStudyPlans(studyPlans);
+                } catch (error) {
+                  console.error('Export failed:', error);
+                  setError('Failed to export study plans');
+                }
+              }}
+            />
+            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<UploadIcon />}
+                onClick={handleImportClick}
+              >
+                Import Study Plans
+              </Button>
+            </Box>
+          </Box>
+        )}
+
+        {/* Main Content */}
+        {viewMode === 'list' && (
+          <StudyPlanList
+            studyPlans={studyPlans}
+            onSelect={handleSelectPlan}
+            onDelete={handleDeletePlan}
+            onCreateNew={handleCreateNew}
+            onRefresh={() => {
+              const existingPlans = studyPlanService.getStudyPlans();
+              setStudyPlans(existingPlans);
             }}
           />
-          <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+        )}
+
+        {viewMode === 'create' && (
+          <Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Create New Study Plan
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Fill out the form below to generate a personalized study plan.
+              </Typography>
+            </Box>
+
+            <StudyPlanForm
+              companies={companies}
+              onSubmit={handleCreateStudyPlan}
+              loading={generating}
+            />
+
+            <Box sx={{ mt: 2 }}>
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={handleBackToList}
+              >
+                ← Back to Study Plans
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        {viewMode === 'view' && selectedPlan && (
+          <Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={handleBackToList}
+              >
+                ← Back to Study Plans
+              </Typography>
+            </Box>
+
+            <StudyPlanView
+              studyPlan={selectedPlan}
+              onUpdate={handleUpdatePlan}
+              onDelete={handleDeletePlan}
+            />
+          </Box>
+        )}
+
+        {/* Loading Backdrop */}
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={generating}
+        >
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress color="inherit" />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Generating Study Plan...
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              This may take a few moments
+            </Typography>
+          </Box>
+        </Backdrop>
+
+        {/* Import Dialog */}
+        <Dialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)}>
+          <DialogTitle>Import Study Plans</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Select a JSON file containing exported study plans to import them into your collection.
+            </Typography>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+            />
             <Button
               variant="outlined"
-              startIcon={<UploadIcon />}
-              onClick={handleImportClick}
+              onClick={handleImportFile}
+              disabled={importing}
+              fullWidth
             >
-              Import Study Plans
+              {importing ? 'Importing...' : 'Choose File'}
             </Button>
-          </Box>
-        </Box>
-      )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setImportDialogOpen(false)} disabled={importing}>
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* Main Content */}
-      {viewMode === 'list' && (
-        <StudyPlanList
-          studyPlans={studyPlans}
-          onSelect={handleSelectPlan}
-          onDelete={handleDeletePlan}
-          onCreateNew={handleCreateNew}
-          onRefresh={() => {
-            const existingPlans = studyPlanService.getStudyPlans();
-            setStudyPlans(existingPlans);
-          }}
+        {/* Success Snackbar */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={4000}
+          onClose={() => setSuccessMessage(null)}
+          message={successMessage}
         />
-      )}
-
-      {viewMode === 'create' && (
-        <Box>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Create New Study Plan
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Fill out the form below to generate a personalized study plan.
-            </Typography>
-          </Box>
-          
-          <StudyPlanForm
-            companies={companies}
-            onSubmit={handleCreateStudyPlan}
-            loading={generating}
-          />
-          
-          <Box sx={{ mt: 2 }}>
-            <Typography 
-              variant="body2" 
-              color="primary" 
-              sx={{ cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={handleBackToList}
-            >
-              ← Back to Study Plans
-            </Typography>
-          </Box>
-        </Box>
-      )}
-
-      {viewMode === 'view' && selectedPlan && (
-        <Box>
-          <Box sx={{ mb: 3 }}>
-            <Typography 
-              variant="body2" 
-              color="primary" 
-              sx={{ cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={handleBackToList}
-            >
-              ← Back to Study Plans
-            </Typography>
-          </Box>
-          
-          <StudyPlanView
-            studyPlan={selectedPlan}
-            onUpdate={handleUpdatePlan}
-            onDelete={handleDeletePlan}
-          />
-        </Box>
-      )}
-
-      {/* Loading Backdrop */}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={generating}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress color="inherit" />
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Generating Study Plan...
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            This may take a few moments
-          </Typography>
-        </Box>
-      </Backdrop>
-
-      {/* Import Dialog */}
-      <Dialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)}>
-        <DialogTitle>Import Study Plans</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Select a JSON file containing exported study plans to import them into your collection.
-          </Typography>
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-          />
-          <Button
-            variant="outlined"
-            onClick={handleImportFile}
-            disabled={importing}
-            fullWidth
-          >
-            {importing ? 'Importing...' : 'Choose File'}
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setImportDialogOpen(false)} disabled={importing}>
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Success Snackbar */}
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        message={successMessage}
-      />
-    </Box>
+      </Box>
+    </PageTransition>
   );
 }

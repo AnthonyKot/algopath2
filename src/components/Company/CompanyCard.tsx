@@ -36,7 +36,7 @@ export function CompanyCard({ company, onClick }: CompanyCardProps) {
   };
 
   // Calculate difficulty percentages
-  const totalDifficultyProblems = 
+  const totalDifficultyProblems =
     difficultyDistribution.EASY +
     difficultyDistribution.MEDIUM +
     difficultyDistribution.HARD +
@@ -59,8 +59,8 @@ export function CompanyCard({ company, onClick }: CompanyCardProps) {
   };
 
   return (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         height: '100%',
         transition: 'all 0.2s ease-in-out',
         '&:hover': {
@@ -78,10 +78,10 @@ export function CompanyCard({ company, onClick }: CompanyCardProps) {
               {company.company}
             </Typography>
             {company.rank && (
-              <Chip 
-                label={`#${company.rank}`} 
-                size="small" 
-                color="primary" 
+              <Chip
+                label={`#${company.rank}`}
+                size="small"
+                color="primary"
                 variant="outlined"
               />
             )}
@@ -128,34 +128,28 @@ export function CompanyCard({ company, onClick }: CompanyCardProps) {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Difficulty Distribution
             </Typography>
-            <Box sx={{ mb: 1 }}>
+            <Box sx={{ display: 'flex', borderRadius: '8px', overflow: 'hidden' }}>
               {Object.entries(difficultyPercentages).map(([difficulty, percentage]) => (
                 percentage > 0 && (
-                  <Tooltip 
+                  <Tooltip
                     key={difficulty}
                     title={`${difficulty}: ${difficultyDistribution[difficulty as keyof typeof difficultyDistribution]} problems (${percentage.toFixed(1)}%)`}
+                    arrow
+                    placement="top"
                   >
                     <Box
                       sx={{
-                        display: 'inline-block',
                         width: `${percentage}%`,
-                        height: 8,
+                        height: 16,
                         backgroundColor: getDifficultyColor(difficulty),
-                        '&:first-of-type': { borderRadius: '4px 0 0 4px' },
-                        '&:last-of-type': { borderRadius: '0 4px 4px 0' },
-                        '&:only-of-type': { borderRadius: '4px' }
+                        cursor: 'pointer',
+                        transition: 'opacity 0.2s',
+                        '&:hover': {
+                          opacity: 0.85,
+                        }
                       }}
                     />
                   </Tooltip>
-                )
-              ))}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {Object.entries(difficultyDistribution).map(([difficulty, count]) => (
-                count > 0 && (
-                  <Typography key={difficulty} variant="caption" color="text.secondary">
-                    {difficulty}: {count}
-                  </Typography>
                 )
               ))}
             </Box>

@@ -20,20 +20,38 @@ export function Navigation() {
   };
 
   return (
-    <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+    <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', pt: 1 }}>
       <PageContainer>
         <Tabs
           value={state.currentView}
           onChange={handleTabChange}
           aria-label="navigation tabs"
-          sx={{ minHeight: 48 }}
+          sx={{
+            minHeight: 56,
+            '& .MuiTab-root': {
+              minHeight: 56,
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                color: 'primary.main',
+              },
+            },
+            '& .MuiTabs-indicator': {
+              height: 3,
+              borderRadius: 3,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              background: 'linear-gradient(90deg, #6366f1 0%, #14b8a6 100%)',
+            }
+          }}
         >
           {navigationTabs.map((tab) => (
             <Tab
               key={tab.value}
               label={tab.label}
               value={tab.value}
-              sx={{ textTransform: 'none', minHeight: 48 }}
+              disableRipple
             />
           ))}
         </Tabs>

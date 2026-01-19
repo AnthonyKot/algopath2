@@ -10,13 +10,35 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Header */}
-      <AppBar position="static" color="primary" elevation={1}>
-        <Toolbar>
-          <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-            Interview Prep Dashboard
-          </Typography>
+      <AppBar
+        position="sticky"
+        color="default"
+        elevation={0}
+        sx={{
+          top: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
+          // Glassmorphism is handled in theme.ts overrides, 
+          // but we ensure it's sticky and top-aligned here.
+        }}
+      >
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography
+              variant="h5"
+              component="h1"
+              sx={{
+                background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 800,
+                letterSpacing: '-0.02em'
+              }}
+            >
+              Interview Prep
+            </Typography>
+          </Box>
           <HealthIndicator />
         </Toolbar>
       </AppBar>
@@ -25,7 +47,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Navigation />
 
       {/* Main Content Area */}
-      <Box sx={{ flex: 1, py: 3 }}>
+      <Box sx={{ flex: 1, py: 4 }}>
         <PageContainer component="main" role="main">
           {children}
         </PageContainer>
