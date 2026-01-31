@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import {
   Box,
   Card,
@@ -7,6 +7,7 @@ import {
   Button,
   Chip,
   LinearProgress,
+  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -26,6 +27,7 @@ import {
   Tab,
   Tooltip
 } from '@mui/material';
+import type { ChipProps } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckCircleIcon,
@@ -43,7 +45,7 @@ import {
   CalendarMonth as CalendarIcon,
   Print as PrintIcon
 } from '@mui/icons-material';
-import type { StudyPlan, StudySession, StudyProblem, ProblemData } from '../../types';
+import type { StudyPlan, StudySession, StudyProblem, ProblemData, StudyPlanMetrics } from '../../types';
 import { studyPlanService } from '../../services/studyPlanService';
 import { ExportService } from '../../services/exportService';
 import { StudyProgressDashboard } from './StudyProgressDashboard';
@@ -71,6 +73,62 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
   });
   const [previewProblem, setPreviewProblem] = useState<ProblemData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const progress = studyPlan.progress;
+
+  const handlePrintPlan = () => window.print();
+
+  const handleExportJson = () => {
+    const exportData = JSON.stringify({
+      exportDate: new Date().toISOString(),
+      version: '1.0',
+      studyPlans: [studyPlan]
+    }, null, 2);
+    const blob = new Blob([exportData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `study-plan-${studyPlan.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const metrics = useMemo<StudyPlanMetrics>(() => {
+    const allProblems = studyPlan.schedule.flatMap(session => session.problems);
+    const bookmarkedProblems = allProblems.filter(problem => problem.notes?.includes('[BOOKMARK]'));
+    const completedProblems = allProblems.filter(problem => problem.status === 'completed');
+
+    const last7DaysSessions = studyPlan.schedule
+      .filter(session => {
+        const sessionDate = new Date(session.date);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return sessionDate >= weekAgo && session.completed;
+      })
+      .length;
+
+    const recentCompletions = completedProblems.filter(problem => {
+      if (!problem.completedAt) return false;
+      const completedDate = new Date(problem.completedAt);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return completedDate >= weekAgo;
+    }).length;
+
+    const velocityRaw = recentCompletions / 7;
+    const velocity = Number.isFinite(velocityRaw) ? parseFloat(velocityRaw.toFixed(1)) : 0;
+    const remainingProblems = progress.totalProblems - progress.completedProblems;
+    const estimatedDaysToComplete = velocity > 0 ? Math.ceil(remainingProblems / velocity) : null;
+
+    return {
+      bookmarkedCount: bookmarkedProblems.length,
+      bookmarkedProblems,
+      last7DaysSessions,
+      velocity,
+      estimatedDaysToComplete
+    };
+  }, [studyPlan, progress]);
 
   const handleProblemStatusChange = (
     sessionId: string,
@@ -152,7 +210,7 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = (difficulty: string): ChipProps['color'] => {
     switch (difficulty) {
       case 'EASY':
         return 'success';
@@ -237,140 +295,119 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
     setPreviewProblem(null);
   };
 
-  const progress = studyPlan.progress;
-
   return (
     <Box>
       {/* Study Plan Header */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box>
+          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} alignItems={{ xs: 'flex-start', lg: 'stretch' }}>
+            <Box sx={{ flex: 1 }}>
               <Typography variant="h5" gutterBottom>
                 {studyPlan.name}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
                 {studyPlan.targetCompanies.map(company => (
                   <Chip key={company} label={company} size="small" />
                 ))}
               </Stack>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }} className="no-print">
-              <Tooltip title="Print / Save as PDF">
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={() => window.print()}
-                >
-                  <PrintIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Add to Calendar (.ics)">
-                <IconButton
-                  size="small"
-                  color="secondary"
-                  onClick={() => ExportService.exportStudyPlanToICS(studyPlan)}
-                >
-                  <CalendarIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Export as JSON">
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={() => {
-                    const exportData = JSON.stringify({
-                      exportDate: new Date().toISOString(),
-                      version: '1.0',
-                      studyPlans: [studyPlan]
-                    }, null, 2);
-                    const blob = new Blob([exportData], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `study-plan-${studyPlan.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  <DownloadIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Edit plan">
-                <IconButton size="small" color="primary">
-                  <EditIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete plan">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => onDelete(studyPlan.id)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
 
-          {/* Progress Overview */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Overall Progress
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={progress.completionRate}
-                sx={{ height: 8, borderRadius: 4, mb: 1 }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                {progress.completedProblems} of {progress.totalProblems} problems completed ({progress.completionRate.toFixed(1)}%)
-              </Typography>
-            </Box>
-            
-            <Stack spacing={1}>
-              <Typography variant="body2">
-                <strong>Current Streak:</strong> {progress.currentStreak} days
-              </Typography>
-              <Typography variant="body2">
-                <strong>Longest Streak:</strong> {progress.longestStreak} days
-              </Typography>
-              <Typography variant="body2">
-                <strong>Avg/Day:</strong> {progress.averageProblemsPerDay.toFixed(1)} problems
-              </Typography>
-            </Stack>
-          </Box>
-
-          {/* Difficulty Breakdown */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Progress by Difficulty
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
-              {Object.entries(progress.difficultyBreakdown).map(([difficulty, stats]) => (
-                <Box key={difficulty} sx={{ textAlign: 'center' }}>
-                  <Chip
-                    label={difficulty}
-                    color={getDifficultyColor(difficulty) as any}
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
-                  <Typography variant="body2">
-                    {stats.completed}/{stats.total}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Overall Progress
                   </Typography>
                   <LinearProgress
                     variant="determinate"
-                    value={stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}
-                    color={getDifficultyColor(difficulty) as any}
-                    sx={{ height: 4, borderRadius: 2 }}
+                    value={progress.completionRate}
+                    sx={{ height: 8, borderRadius: 4, mb: 1 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {progress.completedProblems} of {progress.totalProblems} problems completed ({progress.completionRate.toFixed(1)}%)
+                  </Typography>
+                </Box>
+                <Stack spacing={1}>
+                  <Typography variant="body2">
+                    <strong>Duration:</strong> {studyPlan.duration} weeks
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Daily goal:</strong> {studyPlan.dailyGoal} problems/day
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Focus areas:</strong> {studyPlan.focusAreas?.slice(0, 2).join(', ') || '—'}
+                  </Typography>
+                </Stack>
+              </Box>
+            </Box>
+
+            <Stack spacing={2} sx={{ minWidth: { lg: 320 }, width: { lg: 320 }, flexShrink: 0 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" className="no-print">
+                <Button size="small" variant="outlined" startIcon={<PrintIcon />} onClick={handlePrintPlan}>
+                  Print
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<CalendarIcon />}
+                  onClick={() => ExportService.exportStudyPlanToICS(studyPlan)}
+                >
+                  Add to Calendar
+                </Button>
+                <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportJson}>
+                  Export JSON
+                </Button>
+                <Tooltip title="Plan editing coming soon">
+                  <span>
+                    <Button size="small" variant="outlined" startIcon={<EditIcon />} disabled>
+                      Edit Plan
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => onDelete(studyPlan.id)}
+                >
+                  Delete
+                </Button>
+              </Stack>
+
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Plan Snapshot
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: 1.5
+                  }}
+                >
+                  <HeroMetric
+                    label="Current Streak"
+                    value={`${progress.currentStreak} days`}
+                    helper={`Best: ${progress.longestStreak} days`}
+                  />
+                  <HeroMetric
+                    label="Velocity"
+                    value={`${metrics.velocity.toFixed(1)} /day`}
+                    helper={metrics.estimatedDaysToComplete
+                      ? `ETA ${metrics.estimatedDaysToComplete} days`
+                      : `Target: ${studyPlan.dailyGoal}/day`}
+                  />
+                  <HeroMetric label="Bookmarked" value={metrics.bookmarkedCount} helper="Problems to review" />
+                  <HeroMetric
+                    label="Avg per Day"
+                    value={`${progress.averageProblemsPerDay.toFixed(1)}`}
+                    helper={`${metrics.last7DaysSessions} sessions this week`}
                   />
                 </Box>
-              ))}
-            </Box>
-          </Box>
+              </Paper>
+            </Stack>
+          </Stack>
         </CardContent>
       </Card>
 
@@ -394,6 +431,7 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
       {activeTab === 0 && (
         <StudyProgressDashboard 
           studyPlan={studyPlan} 
+          metrics={metrics}
           onUpdate={onUpdate}
         />
       )}
@@ -464,7 +502,7 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
                               <Chip
                                 label={problem.difficulty}
                                 size="small"
-                                color={getDifficultyColor(problem.difficulty) as any}
+                                color={getDifficultyColor(problem.difficulty)}
                               />
                               <Chip
                                 label={problem.company}
@@ -676,6 +714,32 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
         problem={previewProblem}
         onClose={handleClosePreview}
       />
+    </Box>
+  );
+}
+
+function HeroMetric({ label, value, helper }: { label: string; value: ReactNode; helper?: ReactNode }) {
+  return (
+    <Box
+      sx={{
+        p: 2,
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper'
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="h6" sx={{ mt: 0.5 }}>
+        {value}
+      </Typography>
+      {helper && (
+        <Typography variant="body2" color="text.secondary">
+          {helper}
+        </Typography>
+      )}
     </Box>
   );
 }

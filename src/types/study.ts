@@ -118,3 +118,11 @@ export interface StudyPlanRecommendationResponse {
   skill_level: 'beginner' | 'intermediate' | 'advanced';
   filters: Record<string, unknown>;
 }
+
+export interface StudyPlanMetrics {
+  bookmarkedCount: number;
+  bookmarkedProblems: StudyProblem[];
+  last7DaysSessions: number;
+  velocity: number;
+  estimatedDaysToComplete: number | null;
+}

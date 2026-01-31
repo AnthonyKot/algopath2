@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { UserProfileContext } from './UserProfileContextBase';
 
 export interface UserProfile {
   pin: string;
@@ -7,7 +8,7 @@ export interface UserProfile {
   createdAt: string;
 }
 
-interface UserProfileContextValue {
+export interface UserProfileContextValue {
   profile: UserProfile | null;
   generatePin: (data?: { alias?: string; focus?: string }) => string;
   saveProfile: (updates: Partial<UserProfile>) => void;
@@ -15,8 +16,6 @@ interface UserProfileContextValue {
 }
 
 const LOCAL_STORAGE_KEY = 'algopath:user-profile';
-
-const UserProfileContext = createContext<UserProfileContextValue | undefined>(undefined);
 
 const createPin = () => (Math.floor(1000 + Math.random() * 9000)).toString();
 
@@ -92,12 +91,4 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       {children}
     </UserProfileContext.Provider>
   );
-}
-
-export function useUserProfileContext() {
-  const ctx = useContext(UserProfileContext);
-  if (!ctx) {
-    throw new Error('useUserProfileContext must be used within UserProfileProvider');
-  }
-  return ctx;
 }

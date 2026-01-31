@@ -1,25 +1,16 @@
 import React, { useEffect } from 'react';
-import { 
-  Snackbar, 
-  Alert, 
+import {
+  Snackbar,
+  Alert,
   AlertTitle,
   Button,
   Box
 } from '@mui/material';
-import { 
+import {
   Close as CloseIcon,
-  Refresh as RefreshIcon 
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
-
-interface GlobalError {
-  id: string;
-  message: string;
-  type: 'error' | 'warning' | 'info';
-  details?: string;
-  timestamp: number;
-  canRetry?: boolean;
-  onRetry?: () => void;
-}
+import type { GlobalError } from '../../hooks/useGlobalErrorHandler';
 
 interface GlobalErrorHandlerProps {
   errors: GlobalError[];
@@ -27,10 +18,10 @@ interface GlobalErrorHandlerProps {
   onRetry?: (id: string) => void;
 }
 
-export function GlobalErrorHandler({ 
-  errors, 
-  onDismiss, 
-  onRetry 
+export function GlobalErrorHandler({
+  errors,
+  onDismiss,
+  onRetry
 }: GlobalErrorHandlerProps) {
   // Auto-dismiss info messages after 5 seconds
   useEffect(() => {
@@ -121,84 +112,4 @@ export function GlobalErrorHandler({
       </Alert>
     </Snackbar>
   );
-}
-
-// Error manager hook
-export function useGlobalErrorHandler() {
-  const [errors, setErrors] = React.useState<GlobalError[]>([]);
-
-  const addError = React.useCallback((
-    message: string, 
-    type: GlobalError['type'] = 'error',
-    options?: {
-      details?: string;
-      canRetry?: boolean;
-      onRetry?: () => void;
-    }
-  ) => {
-    const error: GlobalError = {
-      id: `error-${Date.now()}-${Math.random()}`,
-      message,
-      type,
-      details: options?.details,
-      timestamp: Date.now(),
-      canRetry: options?.canRetry,
-      onRetry: options?.onRetry
-    };
-
-    setErrors(prev => [...prev, error]);
-    return error.id;
-  }, []);
-
-  const dismissError = React.useCallback((id: string) => {
-    setErrors(prev => prev.filter(error => error.id !== id));
-  }, []);
-
-  const clearAllErrors = React.useCallback(() => {
-    setErrors([]);
-  }, []);
-
-  // Handle unhandled promise rejections
-  React.useEffect(() => {
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      addError(
-        'An unexpected error occurred',
-        'error',
-        {
-          details: event.reason?.message || String(event.reason),
-          canRetry: true,
-          onRetry: () => window.location.reload()
-        }
-      );
-    };
-
-    const handleError = (event: ErrorEvent) => {
-      console.error('Global error:', event.error);
-      addError(
-        'A JavaScript error occurred',
-        'error',
-        {
-          details: event.error?.message || event.message,
-          canRetry: true,
-          onRetry: () => window.location.reload()
-        }
-      );
-    };
-
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    window.addEventListener('error', handleError);
-
-    return () => {
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      window.removeEventListener('error', handleError);
-    };
-  }, [addError]);
-
-  return {
-    errors,
-    addError,
-    dismissError,
-    clearAllErrors
-  };
 }

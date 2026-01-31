@@ -1,4 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { LegendPayload } from 'recharts/types/component/Legend';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { CompanyData } from '../../types/company';
 
@@ -6,6 +9,12 @@ interface DifficultyPieChartProps {
   company: CompanyData;
   size?: number;
   showLegend?: boolean;
+}
+
+interface DifficultyChartDatum {
+  name: string;
+  value: number;
+  color: string;
 }
 
 export function DifficultyPieChart({ 
@@ -24,7 +33,7 @@ export function DifficultyPieChart({
   };
 
   // Prepare data for the pie chart
-  const data = [
+  const data: DifficultyChartDatum[] = [
     {
       name: 'Easy',
       value: difficultyDistribution.EASY,
@@ -50,10 +59,10 @@ export function DifficultyPieChart({
   const totalProblems = data.reduce((sum, item) => sum + item.value, 0);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const percentage = totalProblems > 0 ? ((data.value / totalProblems) * 100).toFixed(1) : '0';
+  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+    const tooltipDatum = payload?.[0];
+    if (active && tooltipDatum && typeof tooltipDatum.value === 'number') {
+      const percentage = totalProblems > 0 ? ((tooltipDatum.value / totalProblems) * 100).toFixed(1) : '0';
       return (
         <Box
           sx={{
@@ -66,10 +75,10 @@ export function DifficultyPieChart({
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {data.name}
+            {tooltipDatum.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {data.value} problems ({percentage}%)
+            {tooltipDatum.value} problems ({percentage}%)
           </Typography>
         </Box>
       );
@@ -116,8 +125,8 @@ export function DifficultyPieChart({
             <Legend 
               verticalAlign="bottom" 
               height={36}
-              formatter={(value, entry: any) => (
-                <span style={{ color: entry.color }}>{value}</span>
+              formatter={(value: string, entry?: LegendPayload) => (
+                <span style={{ color: entry?.color }}>{value}</span>
               )}
             />
           )}

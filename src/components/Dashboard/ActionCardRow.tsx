@@ -29,7 +29,7 @@ export function ActionCardRow() {
   return (
     <Grid container spacing={2}>
       {actions.map((action) => (
-        <Grid item xs={12} md={4} key={action.title}>
+        <Grid size={{ xs: 12, md: 4 }} key={action.title}>
           <Card sx={{ borderRadius: 3, border: 'none', boxShadow: '0 12px 40px rgba(15,23,42,0.08)' }}>
             <CardActionArea onClick={() => dispatch({ type: 'SET_CURRENT_VIEW', payload: action.view })}>
               <CardContent>

@@ -10,6 +10,8 @@ import {
   ReferenceLine,
   Legend
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, Paper } from '@mui/material';
 import type { AcceptanceVsDifficultyData } from '../../types/analytics';
 
@@ -26,31 +28,31 @@ const DIFFICULTY_COLORS = {
   'UNKNOWN': '#9E9E9E'
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
+const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+  const dataPoint = payload?.[0]?.payload as AcceptanceVsDifficultyData | undefined;
+  if (active && dataPoint) {
     return (
       <Paper sx={{ p: 2, maxWidth: 350 }}>
         <Typography variant="subtitle2" gutterBottom>
-          {data.title}
+          {dataPoint.title}
         </Typography>
         <Typography variant="body2">
-          Acceptance Rate: {(data.acceptanceRate * 100).toFixed(1)}%
+          Acceptance Rate: {(dataPoint.acceptanceRate * 100).toFixed(1)}%
         </Typography>
         <Typography variant="body2">
-          Perceived Difficulty: {data.perceivedDifficulty}/3
+          Perceived Difficulty: {dataPoint.perceivedDifficulty}/3
         </Typography>
         <Typography variant="body2">
-          Actual Difficulty: {data.actualDifficulty.toFixed(2)}/3
+          Actual Difficulty: {dataPoint.actualDifficulty.toFixed(2)}/3
         </Typography>
         <Typography variant="body2">
-          Originality Score: {(data.originalityScore * 100).toFixed(1)}%
+          Originality Score: {(dataPoint.originalityScore * 100).toFixed(1)}%
         </Typography>
         <Typography variant="body2">
-          Total Votes: {data.totalVotes.toLocaleString()}
+          Total Votes: {dataPoint.totalVotes.toLocaleString()}
         </Typography>
         <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-          {data.acceptanceRate > (4 - data.perceivedDifficulty) / 3 
+          {dataPoint.acceptanceRate > (4 - dataPoint.perceivedDifficulty) / 3 
             ? "Easier than expected" 
             : "Harder than expected"}
         </Typography>
@@ -60,10 +62,15 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
-  const color = DIFFICULTY_COLORS[payload.category as keyof typeof DIFFICULTY_COLORS] || '#9E9E9E';
-  const size = Math.max(4, Math.min(12, payload.originalityScore * 15));
+interface CustomDotProps {
+  cx?: number;
+  cy?: number;
+  payload?: AcceptanceVsDifficultyData;
+}
+
+const CustomDot = ({ cx = 0, cy = 0, payload }: CustomDotProps) => {
+  const color = payload ? DIFFICULTY_COLORS[payload.category as keyof typeof DIFFICULTY_COLORS] : '#9E9E9E';
+  const size = payload ? Math.max(4, Math.min(12, payload.originalityScore * 15)) : 4;
   
   return (
     <circle 

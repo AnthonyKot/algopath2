@@ -9,6 +9,8 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, Paper } from '@mui/material';
 import type { QualityDistributionData } from '../../types/analytics';
 
@@ -34,22 +36,22 @@ const CATEGORY_LABELS = {
   'standard': 'Standard'
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
+const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+  const dataPoint = payload?.[0]?.payload as QualityDistributionData | undefined;
+  if (active && dataPoint) {
     return (
       <Paper sx={{ p: 2, maxWidth: 300 }}>
         <Typography variant="subtitle2" gutterBottom>
-          {CATEGORY_LABELS[data.category as keyof typeof CATEGORY_LABELS]}
+          {CATEGORY_LABELS[dataPoint.category as keyof typeof CATEGORY_LABELS]}
         </Typography>
         <Typography variant="body2">
-          Originality Score: {(data.originalityScore * 100).toFixed(1)}%
+          Originality Score: {(dataPoint.originalityScore * 100).toFixed(1)}%
         </Typography>
         <Typography variant="body2">
-          Total Votes: {data.totalVotes.toLocaleString()}
+          Total Votes: {dataPoint.totalVotes.toLocaleString()}
         </Typography>
         <Typography variant="body2">
-          Problems: {data.count}
+          Problems: {dataPoint.count}
         </Typography>
       </Paper>
     );

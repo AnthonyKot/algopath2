@@ -3,8 +3,10 @@ export { ErrorMessage } from './ErrorMessage';
 
 // Error Handling and User Experience
 export { ErrorBoundary, withErrorBoundary, useErrorHandler } from './ErrorBoundary';
-export { GlobalErrorHandler, useGlobalErrorHandler } from './GlobalErrorHandler';
-export { OnboardingTour, useOnboarding } from './OnboardingTour';
+export { GlobalErrorHandler } from './GlobalErrorHandler';
+export { useGlobalErrorHandler } from '../../hooks/useGlobalErrorHandler';
+export { OnboardingTour } from './OnboardingTour';
+export { useOnboarding } from '../../hooks/useOnboarding';
 export { FeatureHighlights } from './FeatureHighlights';
 export { AppInfo } from './AppInfo';
 
@@ -27,4 +29,3 @@ export { EmptyState } from './EmptyState';
 
 // Animated Components
 export { AnimatedCard } from './AnimatedCard';
-

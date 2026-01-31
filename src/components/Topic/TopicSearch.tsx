@@ -18,6 +18,7 @@ import {
   Button,
   Collapse
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
@@ -74,7 +75,7 @@ export function TopicSearch({
 
   // Search and filter logic
   const filteredTopics = useMemo(() => {
-    let filtered = topics.filter(topic => {
+    const filtered = topics.filter(topic => {
       // Text search
       const matchesQuery = !filters.query || 
         topic.topic.toLowerCase().includes(filters.query.toLowerCase());
@@ -93,7 +94,8 @@ export function TopicSearch({
 
     // Sort results
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue = 0;
+      let bValue = 0;
 
       switch (filters.sortBy) {
         case 'frequency':
@@ -105,21 +107,22 @@ export function TopicSearch({
           bValue = 'trendStrength' in b ? (b.trendStrength ?? 0) : 0;
           break;
         case 'relevance':
-        default:
+        default: {
           // For relevance, prioritize exact matches, then partial matches
           const queryLower = filters.query.toLowerCase();
           const aExact = a.topic.toLowerCase() === queryLower ? 1 : 0;
           const bExact = b.topic.toLowerCase() === queryLower ? 1 : 0;
           if (aExact !== bExact) return bExact - aExact;
-          
+
           const aStarts = a.topic.toLowerCase().startsWith(queryLower) ? 1 : 0;
           const bStarts = b.topic.toLowerCase().startsWith(queryLower) ? 1 : 0;
           if (aStarts !== bStarts) return bStarts - aStarts;
-          
+
           // Fall back to frequency
           aValue = 'frequency' in a ? a.frequency : (a.totalFrequency ?? 0);
           bValue = 'frequency' in b ? b.frequency : (b.totalFrequency ?? 0);
           break;
+        }
       }
 
       if (filters.sortOrder === 'asc') {
@@ -161,6 +164,23 @@ export function TopicSearch({
     };
     setFilters(clearedFilters);
     onFilterChange?.(clearedFilters);
+  };
+
+  const handleSortByChange = (
+    event: SelectChangeEvent<TopicSearchFilters['sortBy']>
+  ) => {
+    updateFilters({ sortBy: event.target.value as TopicSearchFilters['sortBy'] });
+  };
+
+  const handleSortOrderChange = (
+    event: SelectChangeEvent<TopicSearchFilters['sortOrder']>
+  ) => {
+    updateFilters({ sortOrder: event.target.value as TopicSearchFilters['sortOrder'] });
+  };
+
+  const handleTrendChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value;
+    updateFilters({ trendDirection: value || undefined });
   };
 
   return (
@@ -227,7 +247,7 @@ export function TopicSearch({
                 <Select
                   value={filters.sortBy}
                   label="Sort By"
-                  onChange={(e) => updateFilters({ sortBy: e.target.value as any })}
+                  onChange={handleSortByChange}
                 >
                   <MenuItem value="relevance">Relevance</MenuItem>
                   <MenuItem value="frequency">Frequency</MenuItem>
@@ -240,7 +260,7 @@ export function TopicSearch({
                 <Select
                   value={filters.sortOrder}
                   label="Order"
-                  onChange={(e) => updateFilters({ sortOrder: e.target.value as any })}
+                  onChange={handleSortOrderChange}
                 >
                   <MenuItem value="desc">High to Low</MenuItem>
                   <MenuItem value="asc">Low to High</MenuItem>
@@ -253,7 +273,7 @@ export function TopicSearch({
                   <Select
                     value={filters.trendDirection || ''}
                     label="Trend"
-                    onChange={(e) => updateFilters({ trendDirection: e.target.value || undefined })}
+                    onChange={handleTrendChange}
                   >
                     <MenuItem value="">All Trends</MenuItem>
                     {availableTrends.map(trend => (

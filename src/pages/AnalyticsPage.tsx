@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -18,7 +18,6 @@ import {
   type SelectChangeEvent
 } from '@mui/material';
 import {
-  Analytics as AnalyticsIcon,
   TrendingUp,
   Compare,
   Insights,
@@ -107,7 +106,7 @@ export const AnalyticsPage: React.FC = () => {
     }
   };
 
-  const loadCustomAnalysis = async () => {
+  const loadCustomAnalysis = useCallback(async () => {
     if (selectedCompanies.length < 2) {
       return;
     }
@@ -131,7 +130,7 @@ export const AnalyticsPage: React.FC = () => {
     } finally {
       setCustomLoading(false);
     }
-  };
+  }, [selectedCompanies]);
 
   const handleRefresh = () => {
     analyticsService.clearCache();
@@ -149,7 +148,7 @@ export const AnalyticsPage: React.FC = () => {
     if (selectedCompanies.length >= 2) {
       loadCustomAnalysis();
     }
-  }, [selectedCompanies]);
+  }, [selectedCompanies, loadCustomAnalysis]);
 
   if (loading) {
     return (
@@ -164,8 +163,8 @@ export const AnalyticsPage: React.FC = () => {
   return (
     <PageTransition>
       <Stack spacing={3}>
-      {/* Header */}
-        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0f2ff, #f3e8ff)' }}>
+        {/* Header */}
+        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0f2ff, #f3e8ff)', p: { xs: 1, md: 2 } }}>
           <CardContent>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
               <Box>
@@ -203,9 +202,9 @@ export const AnalyticsPage: React.FC = () => {
           </Alert>
         )}
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="analytics tabs">
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={activeTab} onChange={handleTabChange} aria-label="analytics tabs">
           <Tab 
             icon={<TrendingUp />} 
             label="Overview" 
@@ -224,11 +223,11 @@ export const AnalyticsPage: React.FC = () => {
             id="analytics-tab-2"
             aria-controls="analytics-tabpanel-2"
           />
-        </Tabs>
-      </Box>
+          </Tabs>
+        </Box>
 
-      {/* Overview Tab */}
-      <TabPanel value={activeTab} index={0}>
+        {/* Overview Tab */}
+        <TabPanel value={activeTab} index={0}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Insights and Quick Stats */}
           <Box sx={{ 
@@ -281,10 +280,10 @@ export const AnalyticsPage: React.FC = () => {
             )}
           </Box>
         </Box>
-      </TabPanel>
+        </TabPanel>
 
       {/* Company Comparison Tab */}
-      <TabPanel value={activeTab} index={1}>
+        <TabPanel value={activeTab} index={1}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Company Selection */}
           <Card>
@@ -333,12 +332,12 @@ export const AnalyticsPage: React.FC = () => {
             <CorrelationMatrix correlations={correlations} />
           )}
         </Box>
-      </TabPanel>
+        </TabPanel>
 
       {/* Major Tech Analysis Tab */}
-      <TabPanel value={activeTab} index={2}>
-        <FaangAnalytics />
-      </TabPanel>
+        <TabPanel value={activeTab} index={2}>
+          <FaangAnalytics />
+        </TabPanel>
       </Stack>
     </PageTransition>
   );

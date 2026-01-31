@@ -1,4 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { CompanyData } from '../../types/company';
 
@@ -15,8 +17,16 @@ export function CompanyStatsChart({
 }: CompanyStatsChartProps) {
   const theme = useTheme();
 
+  interface CompanyChartDatum {
+    company: string;
+    fullName: string;
+    totalProblems: number;
+    uniqueProblems: number;
+    avgFrequency: number;
+  }
+
   // Prepare data for the chart - top companies by total problems
-  const chartData = [...companies]
+  const chartData: CompanyChartDatum[] = [...companies]
     .sort((a, b) => (b.totalProblems ?? 0) - (a.totalProblems ?? 0))
     .slice(0, maxCompanies)
     .map(company => ({
@@ -28,9 +38,9 @@ export function CompanyStatsChart({
     }));
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
+  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+    const tooltipDatum = payload?.[0]?.payload as CompanyChartDatum | undefined;
+    if (active && tooltipDatum) {
       return (
         <Box
           sx={{
@@ -44,16 +54,16 @@ export function CompanyStatsChart({
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            {data.fullName}
+            {tooltipDatum.fullName}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Total Problems: {data.totalProblems}
+            Total Problems: {tooltipDatum.totalProblems}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Unique Problems: {data.uniqueProblems}
+            Unique Problems: {tooltipDatum.uniqueProblems}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Avg Frequency: {data.avgFrequency.toFixed(1)}
+            Avg Frequency: {tooltipDatum.avgFrequency.toFixed(1)}
           </Typography>
         </Box>
       );

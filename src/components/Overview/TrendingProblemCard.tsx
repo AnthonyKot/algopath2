@@ -16,7 +16,8 @@ import {
     OpenInNew as OpenInNewIcon
 } from '@mui/icons-material';
 import { staticDataService } from '../../services/staticDataService';
-import { getFrequencyStars, renderStars, getFrequencyColor } from '../../utils/frequencyRating';
+import { getFrequencyStars, getFrequencyColor } from '../../utils/frequencyRating';
+import { FrequencyStars } from '../Common/FrequencyStars';
 
 interface Problem {
     title: string;
@@ -121,12 +122,11 @@ export function TrendingProblemCard() {
                 {/* Stars + Topics */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                     {stars > 0 && (
-                        <Typography
-                            variant="body2"
-                            sx={{ color: getFrequencyColor(stars), letterSpacing: 1 }}
-                        >
-                            {renderStars(stars)}
-                        </Typography>
+                        <FrequencyStars
+                            rating={stars}
+                            color={getFrequencyColor(stars)}
+                            size="small"
+                        />
                     )}
                     {problem.topics.slice(0, 2).map((topic) => (
                         <Chip key={topic} label={topic} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />

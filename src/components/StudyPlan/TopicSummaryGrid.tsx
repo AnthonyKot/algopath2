@@ -17,7 +17,7 @@ export function TopicSummaryGrid() {
   return (
     <Grid container spacing={2}>
       {topics.slice(0, 4).map((topic) => (
-        <Grid item xs={12} sm={6} md={3} key={topic.topic}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={topic.topic}>
           <Card variant="outlined" sx={{ borderRadius: 3 }}>
             <CardContent>
               <Stack spacing={1}>

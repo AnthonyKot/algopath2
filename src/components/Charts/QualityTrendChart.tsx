@@ -10,6 +10,8 @@ import {
   ComposedChart,
   Bar
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, Paper } from '@mui/material';
 import type { QualityTrendData } from '../../types/analytics';
 
@@ -19,22 +21,28 @@ interface QualityTrendChartProps {
   height?: number;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
       <Paper sx={{ p: 2, maxWidth: 300 }}>
         <Typography variant="subtitle2" gutterBottom>
           {label}
         </Typography>
-        {payload.map((entry: any, index: number) => (
-          <Typography key={index} variant="body2" sx={{ color: entry.color }}>
-            {entry.name}: {
-              entry.dataKey === 'avgOriginalityScore' 
-                ? `${(entry.value * 100).toFixed(1)}%`
-                : entry.value.toLocaleString()
-            }
-          </Typography>
-        ))}
+        {payload.map((entry, index) => {
+          if (entry?.value == null) {
+            return null;
+          }
+
+          return (
+            <Typography key={entry.dataKey ?? index} variant="body2" sx={{ color: entry.color }}>
+              {entry.name}: {
+                entry.dataKey === 'avgOriginalityScore' 
+                  ? `${(Number(entry.value) * 100).toFixed(1)}%`
+                  : Number(entry.value).toLocaleString()
+              }
+            </Typography>
+          );
+        })}
       </Paper>
     );
   }

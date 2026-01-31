@@ -1,4 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { LabelProps } from 'recharts/types/component/Label';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, TrendingFlat } from '@mui/icons-material';
 import type { TopicFrequency, TopicTrend } from '../../types/topic';
@@ -10,6 +13,15 @@ interface TopicFrequencyChartProps {
   showTrendIndicators?: boolean;
 }
 
+interface TopicChartDatum {
+  topic: string;
+  fullTopic: string;
+  frequency: number;
+  trendDirection?: string;
+  trendStrength?: number;
+  rank: number;
+}
+
 export function TopicFrequencyChart({ 
   data, 
   height = 400, 
@@ -19,7 +31,7 @@ export function TopicFrequencyChart({
   const theme = useTheme();
 
   // Transform data for the chart
-  const chartData = (Array.isArray(data) ? data : [])
+  const chartData: TopicChartDatum[] = (Array.isArray(data) ? data : [])
     .slice(0, maxTopics)
     .map((item, index) => {
       // Handle both TopicFrequency and TopicTrend types
@@ -56,9 +68,9 @@ export function TopicFrequencyChart({
   };
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length && payload[0]?.payload) {
-      const datum = payload[0].payload;
+  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+    const datum = payload?.[0]?.payload as TopicChartDatum | undefined;
+    if (active && datum) {
       return (
         <Box
           sx={{
@@ -92,11 +104,12 @@ export function TopicFrequencyChart({
   };
 
   // Custom label for bars (showing trend indicators)
-  const CustomLabel = (props: any) => {
-    if (!showTrendIndicators || !props) return null;
+  const CustomLabel = (props: LabelProps) => {
+    if (!showTrendIndicators) return null;
 
     const { x = 0, y = 0, width = 0, payload } = props;
-    const direction = payload?.trendDirection;
+    const datum = payload as TopicChartDatum | undefined;
+    const direction = datum?.trendDirection;
 
     if (!direction) {
       return null;
@@ -162,7 +175,7 @@ export function TopicFrequencyChart({
             dataKey="frequency" 
             fill={theme.palette.primary.main}
             radius={[4, 4, 0, 0]}
-            label={showTrendIndicators ? (props: any) => <CustomLabel {...props} /> : undefined}
+            label={showTrendIndicators ? <CustomLabel /> : undefined}
           />
         </BarChart>
       </ResponsiveContainer>

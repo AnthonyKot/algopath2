@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useUserProfileContext } from '../context/UserProfileContext';
+import { useUserProfileContext } from './useUserProfileContext';
 
 export function useUserProfile() {
   const ctx = useUserProfileContext();

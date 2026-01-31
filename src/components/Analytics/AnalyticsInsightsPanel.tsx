@@ -5,6 +5,7 @@ import {
   Typography,
   Box,
   Chip,
+  type ChipProps,
   Alert,
   Accordion,
   AccordionSummary,
@@ -25,6 +26,9 @@ import {
   Info
 } from '@mui/icons-material';
 import type { AnalyticsInsightsResponse, AnalyticsInsight } from '../../types/analytics';
+
+type InsightType = AnalyticsInsight['type'];
+type ConfidenceColor = 'success' | 'warning' | 'error';
 
 interface AnalyticsInsightsPanelProps {
   insights: AnalyticsInsightsResponse;
@@ -63,7 +67,7 @@ export const AnalyticsInsightsPanel: React.FC<AnalyticsInsightsPanelProps> = ({ 
     setExpandedInsight(isExpanded ? panel : false);
   };
 
-  const getInsightIcon = (type: AnalyticsInsight['type']) => {
+  const getInsightIcon = (type: InsightType) => {
     switch (type) {
       case 'trend':
         return <TrendingUp />;
@@ -78,7 +82,7 @@ export const AnalyticsInsightsPanel: React.FC<AnalyticsInsightsPanelProps> = ({ 
     }
   };
 
-  const getInsightColor = (type: AnalyticsInsight['type']) => {
+  const getInsightColor = (type: InsightType): ChipProps['color'] => {
     switch (type) {
       case 'trend':
         return 'primary';
@@ -93,13 +97,13 @@ export const AnalyticsInsightsPanel: React.FC<AnalyticsInsightsPanelProps> = ({ 
     }
   };
 
-  const getConfidenceColor = (confidence: number) => {
+  const getConfidenceColor = (confidence: number): ConfidenceColor => {
     if (confidence >= 0.8) return 'success';
     if (confidence >= 0.6) return 'warning';
     return 'error';
   };
 
-  const filterInsightsByType = (type: string) => {
+  const filterInsightsByType = (type: InsightType) => {
     return insights.insights.filter(insight => insight.type === type);
   };
 
@@ -123,13 +127,13 @@ export const AnalyticsInsightsPanel: React.FC<AnalyticsInsightsPanelProps> = ({ 
               <Chip
                 label={insight.type}
                 size="small"
-                color={getInsightColor(insight.type) as any}
+                color={getInsightColor(insight.type)}
                 variant="outlined"
               />
               <Chip
                 label={`${(insight.confidence * 100).toFixed(0)}% confidence`}
                 size="small"
-                color={getConfidenceColor(insight.confidence) as any}
+                color={getConfidenceColor(insight.confidence)}
               />
               {insight.actionable && (
                 <Tooltip title="Actionable insight">
@@ -207,7 +211,7 @@ export const AnalyticsInsightsPanel: React.FC<AnalyticsInsightsPanelProps> = ({ 
             <LinearProgress
               variant="determinate"
               value={insight.confidence * 100}
-              color={getConfidenceColor(insight.confidence) as any}
+              color={getConfidenceColor(insight.confidence)}
               sx={{ height: 6, borderRadius: 3 }}
             />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -270,48 +270,4 @@ export function OnboardingTour({ open, onClose, onComplete }: OnboardingTourProp
       </DialogActions>
     </Dialog>
   );
-}
-
-// Hook for managing onboarding state
-export function useOnboarding() {
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
-    return localStorage.getItem('hasSeenOnboarding') === 'true';
-  });
-
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    if (!hasSeenOnboarding) {
-      // Show onboarding after a short delay to let the app load
-      const timer = setTimeout(() => {
-        setShowOnboarding(true);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [hasSeenOnboarding]);
-
-  const completeOnboarding = () => {
-    setHasSeenOnboarding(true);
-    setShowOnboarding(false);
-    localStorage.setItem('hasSeenOnboarding', 'true');
-  };
-
-  const resetOnboarding = () => {
-    setHasSeenOnboarding(false);
-    localStorage.removeItem('hasSeenOnboarding');
-  };
-
-  const startOnboarding = () => {
-    setShowOnboarding(true);
-  };
-
-  return {
-    showOnboarding,
-    hasSeenOnboarding,
-    completeOnboarding,
-    resetOnboarding,
-    startOnboarding,
-    closeOnboarding: () => setShowOnboarding(false)
-  };
 }

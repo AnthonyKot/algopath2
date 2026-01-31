@@ -23,8 +23,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           // but we ensure it's sticky and top-aligned here.
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Toolbar sx={{ flexDirection: 'column', alignItems: 'stretch', gap: 1, py: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography
               variant="h5"
               component="h1"
@@ -36,10 +36,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                 letterSpacing: '-0.02em'
               }}
             >
-              Interview Prep
+              AlgoPath
             </Typography>
+            <HealthIndicator />
           </Box>
-          <HealthIndicator />
         </Toolbar>
       </AppBar>
 

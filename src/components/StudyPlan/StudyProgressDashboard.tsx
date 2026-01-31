@@ -21,29 +21,24 @@ import {
   Tooltip,
   IconButton
 } from '@mui/material';
+import type { ChipProps } from '@mui/material';
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  LocalFireDepartment as FireIcon,
-  EmojiEvents as TrophyIcon,
-  CalendarToday as CalendarIcon,
-  Assessment as AssessmentIcon,
-  BookmarkBorder as BookmarkIcon,
   Bookmark as BookmarkedIcon,
   CheckCircle as CompletedIcon,
   SkipNext as SkippedIcon,
   Schedule as PendingIcon,
   Download as DownloadIcon
 } from '@mui/icons-material';
-import type { StudyPlan } from '../../types';
+import type { StudyPlan, StudyPlanMetrics } from '../../types';
 import { studyPlanService } from '../../services/studyPlanService';
 
 interface StudyProgressDashboardProps {
   studyPlan: StudyPlan;
+  metrics: StudyPlanMetrics;
   onUpdate: (updatedPlan: StudyPlan) => void;
 }
 
-export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDashboardProps) {
+export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyProgressDashboardProps) {
   const [detailsDialog, setDetailsDialog] = useState<{
     open: boolean;
     type: 'streak' | 'difficulty' | 'topics' | 'companies' | null;
@@ -55,46 +50,6 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
   const feedback = useMemo(() => studyPlanService.generateFeedback(studyPlan), [studyPlan]);
   const adaptiveRecs = useMemo(() => studyPlanService.getAdaptiveRecommendations(studyPlan), [studyPlan]);
   
-  // Calculate additional metrics
-  const metrics = useMemo(() => {
-    const allProblems = studyPlan.schedule.flatMap(session => session.problems);
-    const completedProblems = allProblems.filter(p => p.status === 'completed');
-    const bookmarkedProblems = allProblems.filter(p => p.notes?.includes('[BOOKMARK]'));
-    
-    // Calculate daily progress trend
-    const last7Days = studyPlan.schedule
-      .filter(session => {
-        const sessionDate = new Date(session.date);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return sessionDate >= weekAgo && session.completed;
-      })
-      .length;
-
-    // Calculate completion velocity (problems per day over last week)
-    const recentCompletions = completedProblems.filter(problem => {
-      if (!problem.completedAt) return false;
-      const completedDate = new Date(problem.completedAt);
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return completedDate >= weekAgo;
-    }).length;
-
-    const velocity = recentCompletions / 7;
-    
-    // Estimate completion date based on current velocity
-    const remainingProblems = progress.totalProblems - progress.completedProblems;
-    const estimatedDaysToComplete = velocity > 0 ? Math.ceil(remainingProblems / velocity) : null;
-    
-    return {
-      bookmarkedCount: bookmarkedProblems.length,
-      last7DaysSessions: last7Days,
-      velocity: velocity.toFixed(1),
-      estimatedDaysToComplete,
-      bookmarkedProblems
-    };
-  }, [studyPlan, progress]);
-
   const handleToggleBookmark = (sessionId: string, problemTitle: string, currentNotes: string = '') => {
     const isBookmarked = currentNotes.includes('[BOOKMARK]');
     const newNotes = isBookmarked 
@@ -133,7 +88,7 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
         longestStreak: `${progress.longestStreak} days`,
         averagePerDay: `${progress.averageProblemsPerDay.toFixed(1)} problems`,
         bookmarked: metrics.bookmarkedCount,
-        velocity: `${metrics.velocity} problems/day (last 7 days)`
+        velocity: `${metrics.velocity.toFixed(1)} problems/day (last 7 days)`
       }
     };
 
@@ -146,21 +101,6 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const getStreakColor = (streak: number) => {
-    if (streak >= 7) return 'success';
-    if (streak >= 3) return 'warning';
-    return 'default';
-  };
-
-  const getVelocityTrend = () => {
-    const targetVelocity = studyPlan.dailyGoal;
-    const currentVelocity = parseFloat(metrics.velocity);
-    
-    if (currentVelocity > targetVelocity) return 'up';
-    if (currentVelocity < targetVelocity * 0.8) return 'down';
-    return 'stable';
   };
 
   return (
@@ -177,104 +117,6 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
         >
           Export Report
         </Button>
-      </Box>
-
-      {/* Key Metrics Cards */}
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, 
-        gap: 3, 
-        mb: 4 
-      }}>
-        {/* Overall Progress */}
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <AssessmentIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Overall Progress</Typography>
-            </Box>
-            <Typography variant="h4" color="primary" gutterBottom>
-              {progress.completionRate.toFixed(1)}%
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={progress.completionRate}
-              sx={{ height: 8, borderRadius: 4, mb: 1 }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {progress.completedProblems} of {progress.totalProblems} problems
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Current Streak */}
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <FireIcon color="warning" sx={{ mr: 1 }} />
-              <Typography variant="h6">Current Streak</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-              <Typography variant="h4" color="warning.main">
-                {progress.currentStreak}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                days
-              </Typography>
-            </Box>
-            <Chip
-              label={`Best: ${progress.longestStreak} days`}
-              size="small"
-              color={getStreakColor(progress.longestStreak) as any}
-              icon={<TrophyIcon />}
-              sx={{ mt: 1 }}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Velocity */}
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              {getVelocityTrend() === 'up' && <TrendingUpIcon color="success" sx={{ mr: 1 }} />}
-              {getVelocityTrend() === 'down' && <TrendingDownIcon color="error" sx={{ mr: 1 }} />}
-              {getVelocityTrend() === 'stable' && <CalendarIcon color="primary" sx={{ mr: 1 }} />}
-              <Typography variant="h6">Velocity</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-              <Typography variant="h4" color="primary">
-                {metrics.velocity}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                /day
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              Target: {studyPlan.dailyGoal}/day
-            </Typography>
-            {metrics.estimatedDaysToComplete && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                ETA: {metrics.estimatedDaysToComplete} days
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Bookmarks */}
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <BookmarkIcon color="secondary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Bookmarked</Typography>
-            </Box>
-            <Typography variant="h4" color="secondary" gutterBottom>
-              {metrics.bookmarkedCount}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Problems to review
-            </Typography>
-          </CardContent>
-        </Card>
       </Box>
 
       {/* Detailed Breakdowns */}
@@ -300,12 +142,16 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
             <Stack spacing={2}>
               {Object.entries(progress.difficultyBreakdown).map(([difficulty, stats]) => {
                 const percentage = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
-                const color = difficulty === 'EASY' ? 'success' : difficulty === 'MEDIUM' ? 'warning' : 'error';
+                const color: ChipProps['color'] = difficulty === 'EASY'
+                  ? 'success'
+                  : difficulty === 'MEDIUM'
+                  ? 'warning'
+                  : 'error';
                 
                 return (
                   <Box key={difficulty}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Chip label={difficulty} color={color as any} size="small" />
+                      <Chip label={difficulty} color={color} size="small" />
                       <Typography variant="body2">
                         {stats.completed}/{stats.total} ({percentage.toFixed(0)}%)
                       </Typography>
@@ -313,12 +159,12 @@ export function StudyProgressDashboard({ studyPlan, onUpdate }: StudyProgressDas
                     <LinearProgress
                       variant="determinate"
                       value={percentage}
-                      color={color as any}
+                      color={color}
                       sx={{ height: 6, borderRadius: 3 }}
                     />
-                  </Box>
-                );
-              })}
+                </Box>
+              );
+            })}
             </Stack>
           </CardContent>
         </Card>

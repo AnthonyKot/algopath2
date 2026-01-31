@@ -1,14 +1,18 @@
 import { Box, Typography, useTheme, Tooltip, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useMemo } from 'react';
 import type { TopicHeatmap } from '../../types/topic';
+
+type HeatmapColorScheme = 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges';
+type NormalizationMode = 'absolute' | 'relative';
 
 interface TopicHeatmapChartProps {
   data: TopicHeatmap;
   height?: number;
   maxTopics?: number;
   maxCompanies?: number;
-  colorScheme?: 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges';
-  normalizationMode?: 'absolute' | 'relative';
+  colorScheme?: HeatmapColorScheme;
+  normalizationMode?: NormalizationMode;
 }
 
 interface HeatmapCell {
@@ -165,7 +169,7 @@ export function TopicHeatmapChart({
   const cellHeight = Math.max(25, Math.min(40, (height - 100) / processedData.topics.length));
   
   // Enhanced color schemes for better visibility
-  const getColorScheme = (scheme: 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges' = 'viridis') => {
+  const getColorScheme = (scheme: HeatmapColorScheme = 'viridis') => {
     switch (scheme) {
       case 'viridis':
         return ['#440154', '#482777', '#3f4a8a', '#31678e', '#26838f', '#1f9d8a', '#6cce5a', '#b6de2b', '#fee825'];
@@ -183,7 +187,7 @@ export function TopicHeatmapChart({
   };
 
   // Get color based on normalized value with better contrast
-  const getCellColor = (normalizedValue: number, colorScheme: 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges' = 'plasma') => {
+  const getCellColor = (normalizedValue: number, colorScheme: HeatmapColorScheme = 'plasma') => {
     if (normalizedValue === 0) return theme.palette.grey[50];
     
     const colors = getColorScheme(colorScheme);
@@ -523,8 +527,8 @@ export function TopicHeatmapChart({
 
 // Normalization mode selector component
 interface NormalizationModeSelectorProps {
-  value: 'absolute' | 'relative';
-  onChange: (mode: 'absolute' | 'relative') => void;
+  value: NormalizationMode;
+  onChange: (mode: NormalizationMode) => void;
   size?: 'small' | 'medium';
 }
 
@@ -552,7 +556,7 @@ export function NormalizationModeSelector({
       <Select
         value={value}
         label="Normalization"
-        onChange={(e) => onChange(e.target.value as any)}
+        onChange={(event: SelectChangeEvent<NormalizationMode>) => onChange(event.target.value as NormalizationMode)}
       >
         {modes.map((mode) => (
           <MenuItem key={mode.value} value={mode.value}>
@@ -571,8 +575,8 @@ export function NormalizationModeSelector({
 
 // Color scheme selector component
 interface ColorSchemeSelectorProps {
-  value: 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges';
-  onChange: (scheme: 'viridis' | 'plasma' | 'blues' | 'reds' | 'oranges') => void;
+  value: HeatmapColorScheme;
+  onChange: (scheme: HeatmapColorScheme) => void;
   size?: 'small' | 'medium';
 }
 
@@ -595,7 +599,7 @@ export function ColorSchemeSelector({
       <Select
         value={value}
         label="Color Scheme"
-        onChange={(e) => onChange(e.target.value as any)}
+        onChange={(event: SelectChangeEvent<HeatmapColorScheme>) => onChange(event.target.value as HeatmapColorScheme)}
       >
         {colorSchemes.map((scheme) => (
           <MenuItem key={scheme.value} value={scheme.value}>

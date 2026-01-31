@@ -91,8 +91,8 @@ export function TopicAnalysisPage() {
     });
 
     return filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number;
+      let bValue: string | number;
       switch (sortField) {
         case 'topic':
           aValue = a.topic.toLowerCase();
@@ -148,7 +148,7 @@ export function TopicAnalysisPage() {
   return (
     <PageTransition>
       <Stack spacing={3}>
-        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0ffe7, #e0f0ff)' }}>
+        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0ffe7, #e0f0ff)', p: { xs: 1, md: 2 } }}>
           <CardContent>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               Topic Analysis Dashboard
@@ -160,7 +160,7 @@ export function TopicAnalysisPage() {
         </Card>
 
         <Card>
-        <CardContent>
+          <CardContent>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <FilterIcon sx={{ mr: 1 }} />
             Search & Filter Topics
@@ -222,11 +222,11 @@ export function TopicAnalysisPage() {
               </Box>
             </Box>
           </Box>
-        </CardContent>
+          </CardContent>
         </Card>
 
         <Card>
-        <CardContent>
+          <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
               <InsightsIcon sx={{ mr: 1 }} />
@@ -364,7 +364,7 @@ export function TopicAnalysisPage() {
             </Box>
           )}
 
-        </CardContent>
+          </CardContent>
         </Card>
       </Stack>
     </PageTransition>

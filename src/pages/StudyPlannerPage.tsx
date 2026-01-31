@@ -334,7 +334,7 @@ export function StudyPlannerPage() {
           elevation={0}
           sx={{
             borderRadius: 4,
-            p: { xs: 3, md: 4 },
+            p: { xs: 2, md: 4 },
             background: 'linear-gradient(120deg, #eafbea, #e6f2ff)',
             boxShadow: '0 20px 60px rgba(15,23,42,0.08)'
           }}

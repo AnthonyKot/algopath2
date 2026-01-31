@@ -5,7 +5,9 @@ import {
   Typography,
   Box,
   Chip,
-  Alert
+  Alert,
+  LinearProgress,
+  Stack
 } from '@mui/material';
 import type { CompanyComparison } from '../../types/analytics';
 
@@ -27,47 +29,34 @@ export const CompanyComparisonChart: React.FC<CompanyComparisonChartProps> = ({ 
           Comparing {comparison.companies.length} companies across multiple metrics
         </Typography>
 
-        {/* Company chips */}
-        <Box display="flex" flexWrap="wrap" gap={1} mb={3}>
+        <Stack spacing={2}>
           {comparison.companies.map((company, index) => (
-            <Chip
-              key={company}
-              label={company}
-              sx={{ 
-                bgcolor: COLORS[index % COLORS.length], 
-                color: 'white',
-                fontWeight: 'medium'
-              }}
-            />
-          ))}
-        </Box>
-
-        {/* Basic Metrics Display */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {comparison.companies.map((company) => (
-            <Card key={company} variant="outlined">
+            <Card key={company} variant="outlined" sx={{ borderRadius: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {company}
-                </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Total Problems</Typography>
-                    <Typography variant="h6">{comparison.metrics.totalProblems[company] || 0}</Typography>
+                <Stack spacing={1.5}>
+                  <Chip
+                    label={company}
+                    sx={{
+                      width: 'fit-content',
+                      bgcolor: `${COLORS[index % COLORS.length]}20`,
+                      color: COLORS[index % COLORS.length]
+                    }}
+                  />
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 2 }}>
+                    <MetricPill label="Total problems" value={comparison.metrics.totalProblems[company] || 0} />
+                    <MetricPill label="Unique" value={comparison.metrics.uniqueProblems[company] || 0} />
+                    <MetricPill label="Avg frequency" value={(comparison.metrics.avgFrequency[company] || 0).toFixed(2)} />
                   </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Unique Problems</Typography>
-                    <Typography variant="h6">{comparison.metrics.uniqueProblems[company] || 0}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Avg Frequency</Typography>
-                    <Typography variant="h6">{(comparison.metrics.avgFrequency[company] || 0).toFixed(2)}</Typography>
-                  </Box>
-                </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(100, (comparison.metrics.totalProblems[company] || 0) / 10)}
+                    sx={{ height: 6, borderRadius: 3 }}
+                  />
+                </Stack>
               </CardContent>
             </Card>
           ))}
-        </Box>
+        </Stack>
 
         {/* Recommendations */}
         {comparison.recommendations && comparison.recommendations.length > 0 && (
@@ -94,3 +83,12 @@ export const CompanyComparisonChart: React.FC<CompanyComparisonChartProps> = ({ 
     </Card>
   );
 };
+
+function MetricPill({ label, value }: { label: string; value: number | string }) {
+  return (
+    <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(15,23,42,0.04)' }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>{value}</Typography>
+    </Box>
+  );
+}

@@ -29,7 +29,7 @@ class CacheService {
     return `leetcode_cache_${key}`;
   }
 
-  private isExpired(item: CacheItem<any>): boolean {
+  private isExpired<T>(item: CacheItem<T>): boolean {
     return Date.now() > item.expiresAt;
   }
 
@@ -39,12 +39,18 @@ class CacheService {
     
     cacheKeys.forEach(key => {
       try {
-        const item = JSON.parse(localStorage.getItem(key) || '');
+        const rawItem = localStorage.getItem(key);
+        if (!rawItem) {
+          localStorage.removeItem(key);
+          return;
+        }
+
+        const item: CacheItem<unknown> = JSON.parse(rawItem);
         if (this.isExpired(item)) {
           localStorage.removeItem(key);
         }
       } catch (error) {
-        // Remove corrupted cache items
+        console.warn('Failed to clean cache item:', error);
         localStorage.removeItem(key);
       }
     });
@@ -155,12 +161,12 @@ class CacheService {
   }
 
   // Health check cache
-  setHealthStatus(data: any): void {
-    this.set('health_status', data, 5 * 60 * 1000); // 5 minutes
+  setHealthStatus<T>(data: T): void {
+    this.set<T>('health_status', data, 5 * 60 * 1000); // 5 minutes
   }
 
-  getHealthStatus(): any | null {
-    return this.get('health_status');
+  getHealthStatus<T>(): T | null {
+    return this.get<T>('health_status');
   }
 
   // Cache statistics

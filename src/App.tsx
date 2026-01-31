@@ -7,8 +7,10 @@ import { AppLayout } from './components/Layout';
 import { AppRouter } from './components';
 import { PinWelcomeModal } from './components/Profile';
 import { ErrorBoundary } from './components/Common/ErrorBoundary';
-import { GlobalErrorHandler, useGlobalErrorHandler } from './components/Common/GlobalErrorHandler';
-import { OnboardingTour, useOnboarding } from './components/Common/OnboardingTour';
+import { GlobalErrorHandler } from './components/Common/GlobalErrorHandler';
+import { OnboardingTour } from './components/Common/OnboardingTour';
+import { useGlobalErrorHandler } from './hooks/useGlobalErrorHandler';
+import { useOnboarding } from './hooks/useOnboarding';
 import { config, isFeatureEnabled, logger } from './config/environment';
 
 function AppContent() {

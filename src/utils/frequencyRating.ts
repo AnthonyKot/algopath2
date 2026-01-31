@@ -31,14 +31,6 @@ export const getFrequencyStars = (frequency: number): FrequencyRating => {
     return { stars: 0.5, label: 'Rare' };
 };
 
-export const renderStars = (rating: number): string => {
-    const fullStars = Math.floor(rating);
-    const hasHalf = rating % 1 !== 0;
-    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-    return '★'.repeat(fullStars) + (hasHalf ? '⯪' : '') + '☆'.repeat(emptyStars);
-};
-
 export const getFrequencyColor = (stars: number): string => {
     if (stars >= 4.5) return '#ef4444'; // red - legendary/very hot
     if (stars >= 3.5) return '#f97316'; // orange - hot/popular

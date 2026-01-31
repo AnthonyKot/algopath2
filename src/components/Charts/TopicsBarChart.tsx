@@ -1,4 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { Box, Typography, useTheme } from '@mui/material';
 import type { CompanyData } from '../../types/company';
 
@@ -17,7 +19,13 @@ export function TopicsBarChart({
 
   // For now, we'll create mock frequency data since the API doesn't provide topic frequencies
   // In a real implementation, this would come from a separate API endpoint
-  const topicsData = company.topTopics
+  interface TopicBarDatum {
+    topic: string;
+    fullTopic: string;
+    frequency: number;
+  }
+
+  const topicsData: TopicBarDatum[] = company.topTopics
     .slice(0, maxTopics)
     .map((topic, index) => ({
       topic: topic.length > 15 ? `${topic.substring(0, 15)}...` : topic,
@@ -27,9 +35,9 @@ export function TopicsBarChart({
     .sort((a, b) => b.frequency - a.frequency);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
+  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+    const datum = payload?.[0]?.payload as TopicBarDatum | undefined;
+    if (active && datum) {
       return (
         <Box
           sx={{
@@ -43,10 +51,10 @@ export function TopicsBarChart({
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-            {data.fullTopic}
+            {datum.fullTopic}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Frequency: {data.frequency}
+            Frequency: {datum.frequency}
           </Typography>
         </Box>
       );

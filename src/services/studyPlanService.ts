@@ -172,7 +172,7 @@ class StudyPlanService {
   ): ProblemData[] {
     return problems.sort((a, b) => {
       // First, sort by difficulty preference based on skill level
-      const difficultyWeight = this.getDifficultyWeight(a.difficulty, b.difficulty, skillLevel, prioritizeDifficulty);
+      const difficultyWeight = this.getDifficultyWeight(a.difficulty, b.difficulty, skillLevel);
       if (difficultyWeight !== 0) return difficultyWeight;
 
       // Apply quality-based sorting
@@ -258,8 +258,7 @@ class StudyPlanService {
   private getDifficultyWeight(
     diffA: string,
     diffB: string,
-    skillLevel: 'beginner' | 'intermediate' | 'advanced',
-    _prioritizeDifficulty: ('EASY' | 'MEDIUM' | 'HARD')[]
+    skillLevel: 'beginner' | 'intermediate' | 'advanced'
   ): number {
     const difficultyOrder = skillLevel === 'beginner' 
       ? ['EASY', 'MEDIUM', 'HARD']
@@ -484,8 +483,7 @@ class StudyPlanService {
         const dayProblems = this.selectDailyProblemsAdaptive(
           adaptiveSortedProblems.slice(problemIndex),
           dailyGoal,
-          weeklyPreferences,
-          week + 1
+          weeklyPreferences
         );
         
         dayProblems.forEach(problem => {
@@ -623,8 +621,7 @@ class StudyPlanService {
   private selectDailyProblemsAdaptive(
     availableProblems: StudyProblem[],
     dailyGoal: number,
-    weeklyPreferences: Record<string, number>,
-    _week: number
+    weeklyPreferences: Record<string, number>
   ): StudyProblem[] {
     const selected: StudyProblem[] = [];
     const targetCounts = {
@@ -1001,6 +998,7 @@ class StudyPlanService {
       };
       
     } catch (error) {
+      console.error('Failed to import study plans:', error);
       return { success: false, message: 'Failed to parse file', imported: 0 };
     }
   }
@@ -1051,6 +1049,7 @@ class StudyPlanService {
         percentage: Math.round(percentage)
       };
     } catch (error) {
+      console.warn('Failed to calculate storage info:', error);
       return { used: 0, available: 0, percentage: 0 };
     }
   }
@@ -1145,11 +1144,11 @@ class StudyPlanService {
     // Topic-based insights
     const topicEntries = Object.entries(progress.topicProgress);
     const strugglingTopics = topicEntries
-      .filter(([_, stats]) => stats.total >= 3 && (stats.completed / stats.total) < 0.5)
+      .filter(([, stats]) => stats.total >= 3 && (stats.completed / stats.total) < 0.5)
       .map(([topic]) => topic);
     
     const strongTopics = topicEntries
-      .filter(([_, stats]) => stats.total >= 3 && (stats.completed / stats.total) >= 0.8)
+      .filter(([, stats]) => stats.total >= 3 && (stats.completed / stats.total) >= 0.8)
       .map(([topic]) => topic);
 
     if (strugglingTopics.length > 0) {
@@ -1172,7 +1171,7 @@ class StudyPlanService {
     // Company-specific insights
     const companyEntries = Object.entries(progress.companyProgress);
     const laggingCompanies = companyEntries
-      .filter(([_, stats]) => stats.total >= 5 && (stats.completed / stats.total) < 0.5)
+      .filter(([, stats]) => stats.total >= 5 && (stats.completed / stats.total) < 0.5)
       .map(([company]) => company);
 
     if (laggingCompanies.length > 0) {
@@ -1224,7 +1223,7 @@ class StudyPlanService {
     // Topic recommendations based on weak areas
     const topicEntries = Object.entries(progress.topicProgress);
     const weakTopics = topicEntries
-      .filter(([_, stats]) => stats.total >= 2 && (stats.completed / stats.total) < 0.6)
+      .filter(([, stats]) => stats.total >= 2 && (stats.completed / stats.total) < 0.6)
       .sort((a, b) => (a[1].completed / a[1].total) - (b[1].completed / b[1].total))
       .map(([topic]) => topic)
       .slice(0, 3);

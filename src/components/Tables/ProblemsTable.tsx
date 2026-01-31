@@ -26,7 +26,8 @@ import {
 } from '@mui/icons-material';
 import type { ProblemData } from '../../types/company';
 import BookmarkButton from '../Common/BookmarkButton';
-import { getFrequencyStars, renderStars, getFrequencyColor } from '../../utils/frequencyRating';
+import { getFrequencyStars, getFrequencyColor } from '../../utils/frequencyRating';
+import { FrequencyStars } from '../Common/FrequencyStars';
 
 interface ProblemsTableProps {
   problems: ProblemData[];
@@ -157,10 +158,9 @@ export function ProblemsTable({
 
   const formatFrequency = (value?: number) => {
     if (typeof value !== 'number' || Number.isNaN(value)) {
-      return { display: '—', stars: 0, label: '' };
+      return { stars: 0, label: '' };
     }
-    const { stars, label } = getFrequencyStars(value);
-    return { display: renderStars(stars), stars, label };
+    return getFrequencyStars(value);
   };
 
   if (problems.length === 0) {
@@ -288,9 +288,11 @@ export function ProblemsTable({
                   if (freq.stars === 0) return <Typography variant="body2">—</Typography>;
                   return (
                     <Tooltip title={freq.label}>
-                      <Typography variant="body2" sx={{ color: getFrequencyColor(freq.stars), letterSpacing: 1, fontWeight: 500 }}>
-                        {freq.display}
-                      </Typography>
+                      <FrequencyStars
+                        rating={freq.stars}
+                        color={getFrequencyColor(freq.stars)}
+                        size="small"
+                      />
                     </Tooltip>
                   );
                 })()}

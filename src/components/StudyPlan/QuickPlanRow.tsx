@@ -17,7 +17,7 @@ export function QuickPlanRow({ plans, onSelect }: QuickPlanRowProps) {
   return (
     <Grid container spacing={2}>
       {featured.map((plan) => (
-        <Grid item xs={12} md={4} key={plan.id}>
+        <Grid size={{ xs: 12, md: 4 }} key={plan.id}>
           <Card variant="outlined" sx={{ borderRadius: 3 }} onClick={() => onSelect(plan)}>
             <CardContent>
               <Stack spacing={1}>

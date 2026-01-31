@@ -9,6 +9,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  LinearProgress,
+  Stack,
   type SelectChangeEvent
 } from '@mui/material';
 import type { AnalyticsCorrelationResponse } from '../../types/analytics';
@@ -69,55 +71,11 @@ export const CorrelationMatrix: React.FC<CorrelationMatrixProps> = ({ correlatio
         </Box>
 
         {/* Summary Statistics */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, 
-          gap: 2, 
-          mb: 3 
-        }}>
-          <Card variant="outlined">
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h6" color="success.main">
-                {correlations.summary.strongCorrelations}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Strong Correlations
-              </Typography>
-            </CardContent>
-          </Card>
-          
-          <Card variant="outlined">
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h6" color="primary.main">
-                {correlations.summary.totalPairs}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total Pairs
-              </Typography>
-            </CardContent>
-          </Card>
-          
-          <Card variant="outlined">
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h6" color="text.primary">
-                {correlations.summary.avgCorrelation.toFixed(3)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Avg Correlation
-              </Typography>
-            </CardContent>
-          </Card>
-          
-          <Card variant="outlined">
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h6" color="secondary.main">
-                {correlations.companies.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Companies
-              </Typography>
-            </CardContent>
-          </Card>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, gap: 2, mb: 3 }}>
+          <SummaryPill label="Strong correlations" value={correlations.summary.strongCorrelations} color="success.main" />
+          <SummaryPill label="Total pairs" value={correlations.summary.totalPairs} color="primary.main" />
+          <SummaryPill label="Avg correlation" value={correlations.summary.avgCorrelation.toFixed(3)} color="text.primary" />
+          <SummaryPill label="Companies" value={correlations.companies.length} color="secondary.main" />
         </Box>
 
         {/* Correlation Legend */}
@@ -134,30 +92,43 @@ export const CorrelationMatrix: React.FC<CorrelationMatrixProps> = ({ correlatio
         </Box>
 
         {/* Top Correlations */}
-        <Box>
+        <Stack spacing={1.5}>
           <Typography variant="h6" gutterBottom>
-            Strongest Correlations
+            Strongest correlations
           </Typography>
           {filteredCorrelations
             .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation))
             .slice(0, 10)
             .map((corr, index) => (
-              <Box key={index} display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="body2">
+              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="body2" sx={{ flex: 1 }}>
                   {corr.company1} ↔ {corr.company2}
                 </Typography>
+                <Box sx={{ flex: 2 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(100, Math.abs(corr.correlation) * 100)}
+                    sx={{ height: 6, borderRadius: 3, bgcolor: `${getCorrelationColor(corr.correlation)}20`, '& .MuiLinearProgress-bar': { bgcolor: getCorrelationColor(corr.correlation) } }}
+                  />
+                </Box>
                 <Chip
-                  label={corr.correlation.toFixed(3)}
+                  label={corr.correlation.toFixed(2)}
                   size="small"
-                  sx={{ 
-                    bgcolor: `${getCorrelationColor(corr.correlation)}20`,
-                    color: getCorrelationColor(corr.correlation)
-                  }}
+                  sx={{ bgcolor: `${getCorrelationColor(corr.correlation)}20`, color: getCorrelationColor(corr.correlation) }}
                 />
               </Box>
             ))}
-        </Box>
+        </Stack>
       </CardContent>
     </Card>
   );
 };
+
+function SummaryPill({ label, value, color }: { label: string; value: number | string; color: string }) {
+  return (
+    <Box sx={{ p: 2, borderRadius: 3, bgcolor: `${color}20`, textAlign: 'center' }}>
+      <Typography variant="h6" sx={{ color }}>{value}</Typography>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+    </Box>
+  );
+}
