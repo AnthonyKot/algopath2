@@ -3,11 +3,12 @@ import { useState } from 'react';
 import {
   Box,
   Typography,
-  Alert
+  Alert,
+  Paper,
+  Stack,
+  Button
 } from '@mui/material';
-import {
-  Business as BusinessIcon
-} from '@mui/icons-material';
+import { Business as BusinessIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   CompanyList,
   CompanyFilters,
@@ -69,27 +70,54 @@ export function CompanyResearchPage() {
   // Show company list view
   return (
     <PageTransition>
-      <Box>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <BusinessIcon sx={{ mr: 1, fontSize: 32 }} />
-            <Typography variant="h4" component="h1">
-              Company Research
-            </Typography>
-          </Box>
-          <ExportMenu
-            data={filteredCompanies}
-            dataType="companies"
-            buttonText="Export Companies"
-            disabled={loading || filteredCompanies.length === 0}
-          />
-        </Box>
+      <Stack spacing={3}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 4,
+            p: { xs: 3, md: 4 },
+            background: 'linear-gradient(120deg, #e0ecff, #f5e8ff)',
+            boxShadow: '0 20px 60px rgba(15,23,42,0.08)'
+          }}
+        >
+          <Stack spacing={2}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <BusinessIcon color="primary" />
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    Company Research
+                  </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Analyze interview patterns and problem stats across {stats.totalCompanies.toLocaleString()} companies.
+                </Typography>
+              </Box>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={refetch}
+                  disabled={loading}
+                >
+                  Refresh
+                </Button>
+                <ExportMenu
+                  data={filteredCompanies}
+                  dataType="companies"
+                  buttonText="Export list"
+                  disabled={loading || filteredCompanies.length === 0}
+                />
+              </Stack>
+            </Stack>
 
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Analyze interview patterns and problem statistics from top tech companies.
-          Get insights into difficulty distributions, popular topics, and recent trends.
-        </Typography>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <StatPill label="Companies" value={stats.totalCompanies} accent="#d9e7ff" />
+              <StatPill label="Problems tracked" value={stats.totalProblems} accent="#ffe6f0" />
+              <StatPill label="Avg per company" value={stats.avgProblemsPerCompany} accent="#e9f9f3" />
+            </Stack>
+          </Stack>
+        </Paper>
 
         {/* API Status Alert */}
         {error && (
@@ -120,7 +148,35 @@ export function CompanyResearchPage() {
           onCompanyClick={handleCompanyClick}
           onRetry={refetch}
         />
-      </Box>
+      </Stack>
     </PageTransition>
+  );
+}
+
+interface StatPillProps {
+  label: string;
+  value: number;
+  accent: string;
+}
+
+function StatPill({ label, value, accent }: StatPillProps) {
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        p: 2,
+        borderRadius: 3,
+        bgcolor: accent,
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
+      <Typography variant="subtitle2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700 }}>
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </Typography>
+    </Box>
   );
 }

@@ -6,3 +6,7 @@ export * from './Charts';
 export * from './Tables';
 export * from './StudyPlan';
 export * from './Analytics';
+export * from './LearningPath';
+export * from './Community';
+export * from './Profile';
+export * from './Dashboard';

@@ -14,6 +14,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Stack,
   type SelectChangeEvent
 } from '@mui/material';
 import {
@@ -37,7 +38,7 @@ import type {
   AnalyticsCorrelationResponse
 } from '../types/analytics';
 import { MAJOR_TECH_COMPANIES } from '../types/analytics';
-import { PageContainer } from '../components/Layout';
+import { PageTransition } from '../components/Layout/PageTransition';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -152,42 +153,55 @@ export const AnalyticsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <PageContainer sx={{ py: 4 }}>
+      <PageTransition>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress size={60} />
         </Box>
-      </PageContainer>
+      </PageTransition>
     );
   }
 
   return (
-    <PageContainer sx={{ py: 4 }}>
+    <PageTransition>
+      <Stack spacing={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            <AnalyticsIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
-            Analytics Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Advanced insights and correlations across {summary?.totalCompanies || 470}+ companies
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={handleRefresh}
-          disabled={loading || customLoading}
-        >
-          Refresh Data
-        </Button>
-      </Box>
+        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0f2ff, #f3e8ff)' }}>
+          <CardContent>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  Analytics Dashboard
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Advanced insights across {summary?.totalCompanies || 470}+ companies
+                </Typography>
+              </Box>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={handleRefresh}
+                  disabled={loading || customLoading}
+                >
+                  Refresh
+                </Button>
+              </Stack>
+            </Stack>
+            {summary && (
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 3 }}>
+                <StatsPill label="Total companies" value={summary.totalCompanies} />
+                <StatsPill label="Active topics" value={summary.totalTopics} />
+                <StatsPill label="Problems analyzed" value={summary.totalProblems} />
+              </Stack>
+            )}
+          </CardContent>
+        </Card>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -325,6 +339,16 @@ export const AnalyticsPage: React.FC = () => {
       <TabPanel value={activeTab} index={2}>
         <FaangAnalytics />
       </TabPanel>
-    </PageContainer>
+      </Stack>
+    </PageTransition>
   );
 };
+
+function StatsPill({ label, value }: { label: string; value: number | string }) {
+  return (
+    <Box sx={{ flex: 1, p: 2, borderRadius: 3, bgcolor: 'rgba(15,23,42,0.04)' }}>
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>{value}</Typography>
+    </Box>
+  );
+}

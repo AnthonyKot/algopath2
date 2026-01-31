@@ -8,9 +8,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Paper
+  Paper,
+  Stack
 } from '@mui/material';
-import { CompanyCard } from './CompanyCard';
+import { CompanyListRow } from './CompanyListRow';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 import { ErrorMessage } from '../Common/ErrorMessage';
 import type { CompanyData } from '../../types/company';
@@ -142,24 +143,15 @@ export function CompanyList({
       </Box>
 
       {/* Company Grid */}
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { 
-          xs: '1fr', 
-          sm: '1fr 1fr', 
-          md: '1fr 1fr 1fr', 
-          lg: '1fr 1fr 1fr 1fr' 
-        }, 
-        gap: 3 
-      }}>
+      <Stack spacing={2}>
         {currentCompanies.map((company) => (
-          <CompanyCard
+          <CompanyListRow
             key={company.company}
             company={company}
             onClick={onCompanyClick}
           />
         ))}
-      </Box>
+      </Stack>
 
       {/* Loading overlay for additional data */}
       {loading && companies.length > 0 && (

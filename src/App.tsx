@@ -2,8 +2,10 @@ import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { theme } from './theme/theme';
 import { AppProvider } from './context/AppContext';
+import { UserProfileProvider } from './context/UserProfileContext';
 import { AppLayout } from './components/Layout';
 import { AppRouter } from './components';
+import { PinWelcomeModal } from './components/Profile';
 import { ErrorBoundary } from './components/Common/ErrorBoundary';
 import { GlobalErrorHandler, useGlobalErrorHandler } from './components/Common/GlobalErrorHandler';
 import { OnboardingTour, useOnboarding } from './components/Common/OnboardingTour';
@@ -22,7 +24,8 @@ function AppContent() {
       <AppLayout>
         <AppRouter />
       </AppLayout>
-      
+      <PinWelcomeModal />
+
       {/* Global Error Handler */}
       <GlobalErrorHandler
         errors={errors}
@@ -65,9 +68,11 @@ function App() {
     >
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AppProvider>
-          <AppContent />
-        </AppProvider>
+        <UserProfileProvider>
+          <AppProvider>
+            <AppContent />
+          </AppProvider>
+        </UserProfileProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

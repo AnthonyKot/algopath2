@@ -21,7 +21,8 @@ import {
   TableRow,
   TableSortLabel,
   IconButton,
-  Tooltip
+  Tooltip,
+  Stack
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -37,6 +38,7 @@ import {
 import { useTopicData } from '../hooks/useTopicData';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { useEffect, useMemo, useState } from 'react';
+import { PageTransition } from '../components/Layout/PageTransition';
 
 function getTrendIcon(direction?: string) {
   switch ((direction || '').toLowerCase()) {
@@ -144,17 +146,20 @@ export function TopicAnalysisPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Topic Analysis Dashboard
-      </Typography>
+    <PageTransition>
+      <Stack spacing={3}>
+        <Card sx={{ borderRadius: 4, background: 'linear-gradient(120deg, #e0ffe7, #e0f0ff)' }}>
+          <CardContent>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              Topic Analysis Dashboard
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Explore trending skills and focus areas across companies.
+            </Typography>
+          </CardContent>
+        </Card>
 
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Explore trending LeetCode topics and analyze which skills are gaining momentum across companies.
-        Search, filter, and sort topics to focus on what matters most for your interview preparation.
-      </Typography>
-
-      <Card sx={{ mb: 4 }}>
+        <Card>
         <CardContent>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <FilterIcon sx={{ mr: 1 }} />
@@ -218,9 +223,9 @@ export function TopicAnalysisPage() {
             </Box>
           </Box>
         </CardContent>
-      </Card>
+        </Card>
 
-      <Card sx={{ mb: 4 }}>
+        <Card>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -360,7 +365,8 @@ export function TopicAnalysisPage() {
           )}
 
         </CardContent>
-      </Card>
-    </Box>
+        </Card>
+      </Stack>
+    </PageTransition>
   );
 }

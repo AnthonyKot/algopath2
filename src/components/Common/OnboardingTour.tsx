@@ -38,16 +38,16 @@ interface OnboardingStep {
 
 const onboardingSteps: OnboardingStep[] = [
   {
-    title: 'Welcome to Interview Prep Dashboard',
-    description: 'Your comprehensive tool for data-driven interview preparation with insights from 18,668+ real problems across 470+ companies.',
+    title: 'Welcome to AlgoPath',
+    description: 'A playful, PIN-first prep environment built for senior interviews—learn faster with curated data and lightweight onboarding.',
     icon: <StarIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
     features: [
-      'Real interview data from top tech companies',
-      'Smart analytics and insights',
-      'Personalized study plans',
-      'Quality-based problem recommendations'
+      'No-login PIN system',
+      'Company-tailored paths',
+      'Community streaks + leaderboard',
+      'XP-style dashboard'
     ],
-    highlight: 'Get started with evidence-based interview prep!'
+    highlight: 'Spin up your profile in seconds and keep momentum.'
   },
   {
     title: 'Company Research',

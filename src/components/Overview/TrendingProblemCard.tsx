@@ -53,8 +53,6 @@ export function TrendingProblemCard() {
                 p.difficulty === 'HARD' && (p.frequency || 0) >= 56.4
             );
 
-            console.log('Pool sizes:', { easy: easyPool.length, medium: mediumPool.length, hard: hardPool.length });
-
             const pickRandom = (pool: typeof allProblems) => {
                 if (pool.length === 0) return null;
                 return pool[Math.floor(Math.random() * pool.length)] as Problem;
@@ -65,17 +63,9 @@ export function TrendingProblemCard() {
             const medium = pickRandom(mediumPool);
             const hard = pickRandom(hardPool);
 
-            console.log('Picked problems:', {
-                easy: easy?.title || 'NULL',
-                medium: medium?.title || 'NULL',
-                hard: hard?.title || 'NULL'
-            });
-
             if (easy) selected.push(easy);
             if (medium) selected.push(medium);
             if (hard) selected.push(hard);
-
-            console.log('Selected array length:', selected.length);
 
             // Fallback if empty
             if (selected.length === 0) {

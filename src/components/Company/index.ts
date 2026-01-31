@@ -3,3 +3,4 @@ export { CompanyList } from './CompanyList';
 export { CompanyFilters } from './CompanyFilters';
 export { CompanyDetail } from './CompanyDetail';
 export { CompanyClusterCard } from './CompanyClusterCard';
+export { CompanyListRow } from './CompanyListRow';

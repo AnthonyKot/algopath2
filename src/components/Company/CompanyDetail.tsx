@@ -7,7 +7,8 @@ import {
   CardContent,
   Chip,
   Button,
-  Paper
+  Paper,
+  Stack
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -196,21 +197,28 @@ export function CompanyDetail({
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={onBack}
-          variant="outlined"
-        >
-          Back to Companies
-        </Button>
-      </Box>
+    <Stack spacing={3}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={onBack}
+        variant="outlined"
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        Back to Companies
+      </Button>
 
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 4,
+          p: { xs: 3, md: 4 },
+          background: 'linear-gradient(120deg, #e8f0ff, #f5e8ff)',
+          boxShadow: '0 20px 60px rgba(15,23,42,0.08)'
+        }}
+      >
+        <Stack spacing={2}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+            <Stack direction="row" spacing={1.5} alignItems="center">
               <BusinessIcon sx={{ fontSize: 32, color: 'primary.main' }} />
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 {company.company}
@@ -223,8 +231,31 @@ export function CompanyDetail({
                   size="small"
                 />
               )}
-            </Box>
+            </Stack>
             {problemsLoading && <LoadingSpinner size={20} />}
+          </Stack>
+
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <DetailStat label="Total problems" value={company.totalProblems} />
+            <DetailStat label="Unique problems" value={company.uniqueProblems} />
+            <DetailStat label="Avg frequency" value={company.avgFrequency.toFixed(1)} />
+          </Stack>
+        </Stack>
+      </Paper>
+
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              {selectedTopicFilter
+                ? `Problems tagged "${selectedTopicFilter}"`
+                : 'Problem catalog'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedTopicFilter
+                ? `Showing ${problems.length} of ${problemsTotal}`
+                : `Showing ${problems.length} of ${problemsTotal}`}
+            </Typography>
           </Box>
 
           {company.topTopics && company.topTopics.length > 0 && (
@@ -255,12 +286,6 @@ export function CompanyDetail({
               )}
             </Box>
           )}
-
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {selectedTopicFilter
-              ? `Showing ${problems.length} of ${problemsTotal} problems tagged with "${selectedTopicFilter}"`
-              : `Showing ${problems.length} of ${problemsTotal} problems`}
-          </Typography>
 
           {problemsLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -294,6 +319,26 @@ export function CompanyDetail({
         problem={selectedProblem}
         onClose={handlePreviewClose}
       />
+    </Stack>
+  );
+}
+
+function DetailStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        p: 2,
+        borderRadius: 3,
+        bgcolor: 'rgba(15,23,42,0.04)'
+      }}
+    >
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        {value}
+      </Typography>
     </Box>
   );
 }

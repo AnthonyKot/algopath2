@@ -10,12 +10,14 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Paper,
+  Stack
 } from '@mui/material';
 import {
   Upload as UploadIcon
 } from '@mui/icons-material';
-import { StudyPlanForm, StudyPlanView, StudyPlanList, StorageInfo } from '../components/StudyPlan';
+import { StudyPlanForm, StudyPlanView, StudyPlanList, StorageInfo, QuickPlanRow, TopicSummaryGrid } from '../components/StudyPlan';
 import { LoadingSpinner } from '../components/Common';
 import { PageTransition } from '../components/Layout/PageTransition';
 import { ExportService } from '../services/exportService';
@@ -327,17 +329,46 @@ export function StudyPlannerPage() {
 
   return (
     <PageTransition>
-      <Box>
-        {/* Page Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Study Planner
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Create personalized study plans based on your target companies and preparation timeline.
-            Track your progress and stay motivated with daily goals and streak tracking.
-          </Typography>
-        </Box>
+      <Stack spacing={3}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 4,
+            p: { xs: 3, md: 4 },
+            background: 'linear-gradient(120deg, #eafbea, #e6f2ff)',
+            boxShadow: '0 20px 60px rgba(15,23,42,0.08)'
+          }}
+        >
+          <Stack spacing={2}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  Study Planner
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Craft weekly interview plans aligned with your target companies and timeline.
+                </Typography>
+              </Box>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <Button variant="contained" onClick={handleCreateNew}>
+                  New plan
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                  onClick={handleImportClick}
+                >
+                  Import
+                </Button>
+              </Stack>
+            </Stack>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <PlannerStat label="Saved plans" value={studyPlans.length} />
+              <PlannerStat label="Active view" value={viewMode === 'list' ? 'Overview' : viewMode === 'create' ? 'Create' : selectedPlan?.name || 'Plan'} />
+              <PlannerStat label="Companies tracked" value={companies.length} />
+            </Stack>
+          </Stack>
+        </Paper>
 
         {/* Error Alert */}
         {error && (
@@ -346,9 +377,10 @@ export function StudyPlannerPage() {
           </Alert>
         )}
 
-        {/* Storage Info */}
         {viewMode === 'list' && (
-          <Box sx={{ mb: 3 }}>
+          <Stack spacing={3}>
+            <QuickPlanRow plans={studyPlans} onSelect={handleSelectPlan} />
+            <TopicSummaryGrid />
             <StorageInfo
               onExport={() => {
                 try {
@@ -359,16 +391,7 @@ export function StudyPlannerPage() {
                 }
               }}
             />
-            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-                onClick={handleImportClick}
-              >
-                Import Study Plans
-              </Button>
-            </Box>
-          </Box>
+          </Stack>
         )}
 
         {/* Main Content */}
@@ -489,7 +512,32 @@ export function StudyPlannerPage() {
           onClose={() => setSuccessMessage(null)}
           message={successMessage}
         />
-      </Box>
+      </Stack>
     </PageTransition>
+  );
+}
+
+interface PlannerStatProps {
+  label: string;
+  value: string | number;
+}
+
+function PlannerStat({ label, value }: PlannerStatProps) {
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        p: 2,
+        borderRadius: 3,
+        bgcolor: 'rgba(15,23,42,0.04)'
+      }}
+    >
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </Typography>
+    </Box>
   );
 }

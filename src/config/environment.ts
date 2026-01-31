@@ -35,7 +35,7 @@ const defaultConfig: EnvironmentConfig = {
   apiUrl: 'http://localhost:8000',
   apiTimeout: 60000,
   enableAnalytics: true,
-  enableOnboarding: true,
+  enableOnboarding: false,
   enableErrorReporting: false,
   cacheDuration: 3600000, // 1 hour
   maxCacheSize: 104857600, // 100MB
@@ -56,7 +56,12 @@ function loadEnvironmentConfig(): EnvironmentConfig {
     apiTimeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || defaultConfig.apiTimeout,
     
     enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-    enableOnboarding: import.meta.env.VITE_ENABLE_ONBOARDING !== 'false', // Default true
+    enableOnboarding: (() => {
+      const flag = import.meta.env.VITE_ENABLE_ONBOARDING;
+      if (flag === 'true') return true;
+      if (flag === 'false') return false;
+      return defaultConfig.enableOnboarding;
+    })(),
     enableErrorReporting: import.meta.env.VITE_ENABLE_ERROR_REPORTING === 'true',
     
     cacheDuration: parseInt(import.meta.env.VITE_CACHE_DURATION) || defaultConfig.cacheDuration,
