@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{pin} {
+      // Require authentication for all operations
+      // For MVP with Anonymous Auth, we allow any authenticated user to read/write
+      // This protects against public scraping but assumes "Device Owner" trust model
+      // TODO: For multi-device or strict isolation, implement specific ownerUid checks
+      // and upgrade to fully identified auth (Email/Google)
+      allow read, write: if request.auth != null;
+    }
+  }
+}

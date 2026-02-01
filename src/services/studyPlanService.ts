@@ -1,18 +1,26 @@
-import type { 
-  StudyPlan, 
-  StudyPlanFormData, 
+import type {
+  StudyPlan,
+  StudyPlanFormData,
   StudyPlanGeneratorOptions,
   StudySession,
   StudyProblem,
   StudyProgress,
   ProblemData,
-  CompanyData 
+  CompanyData
 } from '../types';
 
 class StudyPlanService {
   private readonly STORAGE_KEY = 'interview_prep_study_plans';
   private readonly BACKUP_KEY = 'interview_prep_backup';
   private readonly EXPORT_KEY = 'interview_prep_export_reminder';
+
+  private getStorageKey(userId?: string): string {
+    return userId ? `${this.STORAGE_KEY}_${userId}` : this.STORAGE_KEY;
+  }
+
+  private getBackupKey(userId?: string): string {
+    return userId ? `${this.BACKUP_KEY}_${userId}` : this.BACKUP_KEY;
+  }
 
 
   // Generate a study plan based on form data
@@ -39,7 +47,7 @@ class StudyPlanService {
     );
 
     // Apply quality filtering if enabled
-    const qualityFilteredProblems = includeQualityMetrics 
+    const qualityFilteredProblems = includeQualityMetrics
       ? this.applyQualityFiltering(relevantProblems, minQualityScore, learningMode)
       : relevantProblems;
 
@@ -54,7 +62,7 @@ class StudyPlanService {
 
     // Calculate total problems needed
     const totalProblems = formData.duration * 7 * formData.dailyGoal;
-    
+
     // Select problems for the study plan with quality awareness
     const selectedProblems = this.selectQualityAwareProblems(
       sortedProblems,
@@ -68,20 +76,20 @@ class StudyPlanService {
     );
 
     // Generate adaptive schedule if enabled
-    const schedule = adaptiveDifficulty 
+    const schedule = adaptiveDifficulty
       ? this.generateAdaptiveSchedule(
-          selectedProblems,
-          formData.startDate,
-          formData.duration,
-          formData.dailyGoal,
-          formData.skillLevel
-        )
+        selectedProblems,
+        formData.startDate,
+        formData.duration,
+        formData.dailyGoal,
+        formData.skillLevel
+      )
       : this.generateSchedule(
-          selectedProblems,
-          formData.startDate,
-          formData.duration,
-          formData.dailyGoal
-        );
+        selectedProblems,
+        formData.startDate,
+        formData.duration,
+        formData.dailyGoal
+      );
 
     // Create study plan
     const studyPlan: StudyPlan = {
@@ -134,7 +142,7 @@ class StudyPlanService {
 
     // Normalize likes (assuming max ~10k likes for popular problems)
     const normalizedLikes = Math.min(likes / 10000, 1);
-    
+
     // Composite score considering multiple factors
     return (
       originalityScore * 0.4 +
@@ -149,7 +157,7 @@ class StudyPlanService {
     const likes = (problem as any).likes || 0;
     const originalityScore = (problem as any).originalityScore || 0;
     const totalVotes = (problem as any).totalVotes || 0;
-    
+
     return likes >= 1000 && originalityScore >= 0.75 && totalVotes >= 2000;
   }
 
@@ -158,7 +166,7 @@ class StudyPlanService {
     const originalityScore = (problem as any).originalityScore || 0;
     const totalVotes = (problem as any).totalVotes || 0;
     const likes = (problem as any).likes || 0;
-    
+
     return originalityScore >= 0.85 && totalVotes <= 2000 && likes >= 50;
   }
 
@@ -260,11 +268,11 @@ class StudyPlanService {
     diffB: string,
     skillLevel: 'beginner' | 'intermediate' | 'advanced'
   ): number {
-    const difficultyOrder = skillLevel === 'beginner' 
+    const difficultyOrder = skillLevel === 'beginner'
       ? ['EASY', 'MEDIUM', 'HARD']
       : skillLevel === 'intermediate'
-      ? ['MEDIUM', 'EASY', 'HARD']
-      : ['HARD', 'MEDIUM', 'EASY'];
+        ? ['MEDIUM', 'EASY', 'HARD']
+        : ['HARD', 'MEDIUM', 'EASY'];
 
     const indexA = difficultyOrder.indexOf(diffA as any);
     const indexB = difficultyOrder.indexOf(diffB as any);
@@ -307,7 +315,7 @@ class StudyPlanService {
       if (balanceAcrossCompanies) {
         const avgPerCompany = selected.length / targetCompanies.length;
         const currentCompanyCount = companyCount[problem.company];
-        
+
         // Skip if this company already has significantly more than average
         if (currentCompanyCount > avgPerCompany + 2) {
           continue;
@@ -411,7 +419,7 @@ class StudyPlanService {
   ): boolean {
     const currentRatio = current[difficulty] || 0;
     const targetRatio = target[difficulty] || 0;
-    
+
     // Allow if we're under target or within 10% tolerance
     return currentRatio <= targetRatio + 0.1;
   }
@@ -419,7 +427,7 @@ class StudyPlanService {
   // Get quality tier for a problem
   private getQualityTier(problem: ProblemData): 'Premium' | 'High' | 'Good' | 'Average' | 'Unknown' {
     const qualityScore = this.calculateQualityScore(problem);
-    
+
     if (qualityScore >= 0.8) return 'Premium';
     if (qualityScore >= 0.6) return 'High';
     if (qualityScore >= 0.4) return 'Good';
@@ -437,19 +445,19 @@ class StudyPlanService {
     if (isClassic && learningMode === 'interview_classics') {
       return `Interview classic with ${likes.toLocaleString()} likes`;
     }
-    
+
     if (isGem && learningMode === 'hidden_gems') {
       return `Hidden gem with ${(((problem as any).originalityScore || 0.5) * 100).toFixed(0)}% originality`;
     }
-    
+
     if (qualityScore >= 0.8) {
       return `Premium quality problem (${(qualityScore * 100).toFixed(0)}% score)`;
     }
-    
+
     if (qualityScore >= 0.6) {
       return `High quality problem with good community feedback`;
     }
-    
+
     return `Selected for balanced learning approach`;
   }
 
@@ -463,29 +471,29 @@ class StudyPlanService {
   ): StudySession[] {
     const schedule: StudySession[] = [];
     const start = new Date(startDate);
-    
+
     // Sort problems for adaptive progression
     const adaptiveSortedProblems = this.sortProblemsForAdaptiveProgression(problems, skillLevel);
-    
+
     let problemIndex = 0;
 
     for (let week = 0; week < durationWeeks; week++) {
       // Get weekly difficulty preferences
       const weeklyPreferences = this.getWeeklyDifficultyPreferences(week + 1, skillLevel);
-      
+
       for (let day = 0; day < 7; day++) {
         const currentDate = new Date(start);
         currentDate.setDate(start.getDate() + (week * 7) + day);
 
         const dailyProblems: StudyProblem[] = [];
-        
+
         // Select problems for this day based on weekly preferences
         const dayProblems = this.selectDailyProblemsAdaptive(
           adaptiveSortedProblems.slice(problemIndex),
           dailyGoal,
           weeklyPreferences
         );
-        
+
         dayProblems.forEach(problem => {
           dailyProblems.push({ ...problem });
           problemIndex++;
@@ -522,7 +530,7 @@ class StudyPlanService {
         currentDate.setDate(start.getDate() + (week * 7) + day);
 
         const dailyProblems: StudyProblem[] = [];
-        
+
         // Add problems for this day
         for (let i = 0; i < dailyGoal && problemIndex < problems.length; i++) {
           dailyProblems.push({ ...problems[problemIndex] });
@@ -549,11 +557,11 @@ class StudyPlanService {
     skillLevel: 'beginner' | 'intermediate' | 'advanced'
   ): StudyProblem[] {
     // Create difficulty order based on skill level
-    const difficultyOrder = skillLevel === 'beginner' 
+    const difficultyOrder = skillLevel === 'beginner'
       ? ['EASY', 'MEDIUM', 'HARD']
       : skillLevel === 'intermediate'
-      ? ['EASY', 'MEDIUM', 'HARD'] // Mixed approach
-      : ['MEDIUM', 'EASY', 'HARD']; // Advanced starts with medium
+        ? ['EASY', 'MEDIUM', 'HARD'] // Mixed approach
+        : ['MEDIUM', 'EASY', 'HARD']; // Advanced starts with medium
 
     return problems.sort((a, b) => {
       // First sort by quality (higher quality first within each difficulty)
@@ -641,10 +649,10 @@ class StudyPlanService {
 
     // Select problems by difficulty
     const counts = { EASY: 0, MEDIUM: 0, HARD: 0 };
-    
+
     for (const problem of availableProblems) {
       if (selected.length >= dailyGoal) break;
-      
+
       const difficulty = problem.difficulty as keyof typeof counts;
       if (counts[difficulty] < targetCounts[difficulty]) {
         selected.push(problem);
@@ -710,29 +718,34 @@ class StudyPlanService {
   }
 
   // Save study plan to localStorage with backup
-  saveStudyPlan(studyPlan: StudyPlan): void {
-    const existingPlans = this.getStudyPlans();
+  saveStudyPlan(studyPlan: StudyPlan, userId?: string): void {
+    const existingPlans = this.getStudyPlans(userId);
     const updatedPlans = existingPlans.filter(plan => plan.id !== studyPlan.id);
     updatedPlans.push({
       ...studyPlan,
       updatedAt: new Date().toISOString()
     });
-    
+
+    const storageKey = this.getStorageKey(userId);
+    const backupKey = this.getBackupKey(userId);
+
     try {
       // Save to primary storage
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedPlans));
-      
+      localStorage.setItem(storageKey, JSON.stringify(updatedPlans));
+
       // Create backup every time we save
-      this.createBackup(updatedPlans);
-      
+      this.createBackup(updatedPlans, userId);
+
       // Check if we should remind user to export
       this.checkExportReminder();
-      
+
+
     } catch (error) {
       console.error('Failed to save study plan:', error);
       // Try to save to backup location
       try {
-        localStorage.setItem(this.BACKUP_KEY, JSON.stringify(updatedPlans));
+        const backupKey = this.getBackupKey(userId);
+        localStorage.setItem(backupKey, JSON.stringify(updatedPlans));
       } catch (backupError) {
         console.error('Failed to save backup:', backupError);
         throw new Error('Storage quota exceeded. Please export your data and clear some space.');
@@ -741,9 +754,10 @@ class StudyPlanService {
   }
 
   // Get all study plans from localStorage
-  getStudyPlans(): StudyPlan[] {
+  getStudyPlans(userId?: string): StudyPlan[] {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const storageKey = this.getStorageKey(userId);
+      const stored = localStorage.getItem(storageKey);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error loading study plans:', error);
@@ -752,16 +766,17 @@ class StudyPlanService {
   }
 
   // Get a specific study plan by ID
-  getStudyPlan(id: string): StudyPlan | null {
-    const plans = this.getStudyPlans();
+  getStudyPlan(id: string, userId?: string): StudyPlan | null {
+    const plans = this.getStudyPlans(userId);
     return plans.find(plan => plan.id === id) || null;
   }
 
   // Delete a study plan
-  deleteStudyPlan(id: string): void {
-    const plans = this.getStudyPlans();
+  deleteStudyPlan(id: string, userId?: string): void {
+    const plans = this.getStudyPlans(userId);
     const updatedPlans = plans.filter(plan => plan.id !== id);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedPlans));
+    const storageKey = this.getStorageKey(userId);
+    localStorage.setItem(storageKey, JSON.stringify(updatedPlans));
   }
 
   // Update problem status and recalculate progress
@@ -770,10 +785,12 @@ class StudyPlanService {
     sessionId: string,
     problemTitle: string,
     status: StudyProblem['status'],
-    notes?: string
+    notes?: string,
+    userId?: string
   ): void {
-    const studyPlan = this.getStudyPlan(studyPlanId);
+    const studyPlan = this.getStudyPlan(studyPlanId, userId);
     if (!studyPlan) return;
+
 
     // Find and update the problem
     const session = studyPlan.schedule.find(s => s.id === sessionId);
@@ -790,7 +807,7 @@ class StudyPlanService {
     }
 
     // Check if session is completed
-    session.completed = session.problems.every(p => 
+    session.completed = session.problems.every(p =>
       p.status === 'completed' || p.status === 'skipped'
     );
 
@@ -802,16 +819,17 @@ class StudyPlanService {
     studyPlan.progress = this.calculateProgress(studyPlan);
 
     // Save updated plan
-    this.saveStudyPlan(studyPlan);
+    // Save updated plan
+    this.saveStudyPlan(studyPlan, userId);
   }
 
   // Calculate current progress
   private calculateProgress(studyPlan: StudyPlan): StudyProgress {
     const allProblems = studyPlan.schedule.flatMap(session => session.problems);
-    
+
     const completedProblems = allProblems.filter(p => p.status === 'completed').length;
     const skippedProblems = allProblems.filter(p => p.status === 'skipped').length;
-    
+
     // Calculate difficulty breakdown
     const difficultyBreakdown = {
       EASY: { completed: 0, total: 0 },
@@ -858,8 +876,8 @@ class StudyPlanService {
 
     // Calculate average problems per day
     const completedSessions = studyPlan.schedule.filter(s => s.completed);
-    const averageProblemsPerDay = completedSessions.length > 0 
-      ? completedProblems / completedSessions.length 
+    const averageProblemsPerDay = completedSessions.length > 0
+      ? completedProblems / completedSessions.length
       : 0;
 
     return {
@@ -898,9 +916,9 @@ class StudyPlanService {
       } else {
         const prevDate = new Date(sortedSessions[i - 1].date);
         prevDate.setHours(0, 0, 0, 0);
-        
+
         const daysDiff = (sessionDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         if (daysDiff === 1) {
           tempStreak++;
         } else {
@@ -921,61 +939,66 @@ class StudyPlanService {
   }
 
   // Create backup of study plans
-  private createBackup(plans: StudyPlan[]): void {
+  private createBackup(plans: StudyPlan[], userId?: string): void {
     try {
       const backup = {
         timestamp: new Date().toISOString(),
         plans: plans,
         version: '1.0'
       };
-      localStorage.setItem(this.BACKUP_KEY, JSON.stringify(backup));
+      const backupKey = this.getBackupKey(userId);
+      localStorage.setItem(backupKey, JSON.stringify(backup));
     } catch (error) {
       console.warn('Failed to create backup:', error);
     }
   }
 
   // Check if user should be reminded to export data
-  private checkExportReminder(): void {
-    const lastReminder = localStorage.getItem(this.EXPORT_KEY);
+  private checkExportReminder(userId?: string): void {
+    // Only basic check for now, can be improved with user specific key if needed
+    // For now we use global or user-prefixed
+    const key = userId ? `${this.EXPORT_KEY}_${userId}` : this.EXPORT_KEY;
+
+    const lastReminder = localStorage.getItem(key);
     const now = new Date().getTime();
     const reminderInterval = 7 * 24 * 60 * 60 * 1000; // 7 days
-    
+
     if (!lastReminder || (now - parseInt(lastReminder)) > reminderInterval) {
       // Set reminder for next time
-      localStorage.setItem(this.EXPORT_KEY, now.toString());
-      
+      localStorage.setItem(key, now.toString());
+
       // Show reminder (could be enhanced with a proper notification system)
       console.info('💡 Tip: Consider exporting your study plans to avoid data loss!');
     }
   }
 
   // Export study plans to JSON file
-  exportStudyPlans(): string {
-    const plans = this.getStudyPlans();
+  exportStudyPlans(userId?: string): string {
+    const plans = this.getStudyPlans(userId);
     const exportData = {
       exportDate: new Date().toISOString(),
       version: '1.0',
       studyPlans: plans
     };
-    
+
     return JSON.stringify(exportData, null, 2);
   }
 
   // Import study plans from JSON
-  importStudyPlans(jsonData: string): { success: boolean; message: string; imported: number } {
+  importStudyPlans(jsonData: string, userId?: string): { success: boolean; message: string; imported: number } {
     try {
       const importData = JSON.parse(jsonData);
-      
+
       if (!importData.studyPlans || !Array.isArray(importData.studyPlans)) {
         return { success: false, message: 'Invalid file format', imported: 0 };
       }
-      
-      const existingPlans = this.getStudyPlans();
+
+      const existingPlans = this.getStudyPlans(userId);
       const existingIds = new Set(existingPlans.map(p => p.id));
-      
+
       let importedCount = 0;
       const newPlans = [...existingPlans];
-      
+
       for (const plan of importData.studyPlans) {
         // Validate plan structure
         if (this.isValidStudyPlan(plan)) {
@@ -985,18 +1008,19 @@ class StudyPlanService {
           }
         }
       }
-      
+
       if (importedCount > 0) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newPlans));
-        this.createBackup(newPlans);
+        const storageKey = this.getStorageKey(userId);
+        localStorage.setItem(storageKey, JSON.stringify(newPlans));
+        this.createBackup(newPlans, userId);
       }
-      
-      return { 
-        success: true, 
-        message: `Successfully imported ${importedCount} study plans`, 
-        imported: importedCount 
+
+      return {
+        success: true,
+        message: `Successfully imported ${importedCount} study plans`,
+        imported: importedCount
       };
-      
+
     } catch (error) {
       console.error('Failed to import study plans:', error);
       return { success: false, message: 'Failed to parse file', imported: 0 };
@@ -1005,25 +1029,27 @@ class StudyPlanService {
 
   // Validate study plan structure
   private isValidStudyPlan(plan: any): boolean {
-    return plan && 
-           typeof plan.id === 'string' &&
-           typeof plan.name === 'string' &&
-           Array.isArray(plan.targetCompanies) &&
-           typeof plan.duration === 'number' &&
-           typeof plan.dailyGoal === 'number' &&
-           Array.isArray(plan.schedule) &&
-           plan.progress;
+    return plan &&
+      typeof plan.id === 'string' &&
+      typeof plan.name === 'string' &&
+      Array.isArray(plan.targetCompanies) &&
+      typeof plan.duration === 'number' &&
+      typeof plan.dailyGoal === 'number' &&
+      Array.isArray(plan.schedule) &&
+      plan.progress;
   }
 
   // Restore from backup if main storage is corrupted
-  restoreFromBackup(): boolean {
+  restoreFromBackup(userId?: string): boolean {
     try {
-      const backupData = localStorage.getItem(this.BACKUP_KEY);
+      const backupKey = this.getBackupKey(userId);
+      const backupData = localStorage.getItem(backupKey);
       if (!backupData) return false;
-      
+
       const backup = JSON.parse(backupData);
       if (backup.plans && Array.isArray(backup.plans)) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(backup.plans));
+        const storageKey = this.getStorageKey(userId);
+        localStorage.setItem(storageKey, JSON.stringify(backup.plans));
         return true;
       }
       return false;
@@ -1034,15 +1060,15 @@ class StudyPlanService {
   }
 
   // Get storage usage information
-  getStorageInfo(): { used: number; available: number; percentage: number } {
+  getStorageInfo(userId?: string): { used: number; available: number; percentage: number } {
     try {
-      const plans = JSON.stringify(this.getStudyPlans());
+      const plans = JSON.stringify(this.getStudyPlans(userId));
       const used = new Blob([plans]).size;
-      
+
       // Estimate available space (localStorage is typically 5-10MB)
       const estimated = 5 * 1024 * 1024; // 5MB conservative estimate
       const percentage = (used / estimated) * 100;
-      
+
       return {
         used: Math.round(used / 1024), // KB
         available: Math.round((estimated - used) / 1024), // KB
@@ -1132,11 +1158,11 @@ class StudyPlanService {
     if (easyRate < 0.8 && EASY.total > 0) {
       recommendations.push("Focus on completing more EASY problems to build confidence and fundamentals.");
     }
-    
+
     if (easyRate >= 0.8 && mediumRate < 0.6 && MEDIUM.total > 0) {
       recommendations.push("Great job with easy problems! Now challenge yourself with more MEDIUM difficulty problems.");
     }
-    
+
     if (mediumRate >= 0.7 && hardRate < 0.4 && HARD.total > 0) {
       recommendations.push("You're ready for HARD problems! They'll prepare you for senior-level interviews.");
     }
@@ -1146,7 +1172,7 @@ class StudyPlanService {
     const strugglingTopics = topicEntries
       .filter(([, stats]) => stats.total >= 3 && (stats.completed / stats.total) < 0.5)
       .map(([topic]) => topic);
-    
+
     const strongTopics = topicEntries
       .filter(([, stats]) => stats.total >= 3 && (stats.completed / stats.total) >= 0.8)
       .map(([topic]) => topic);
@@ -1196,7 +1222,7 @@ class StudyPlanService {
   } {
     const progress = studyPlan.progress;
     const { EASY, MEDIUM, HARD } = progress.difficultyBreakdown;
-    
+
     // Calculate success rates
     const easyRate = EASY.total > 0 ? EASY.completed / EASY.total : 0;
     const mediumRate = MEDIUM.total > 0 ? MEDIUM.completed / MEDIUM.total : 0;
@@ -1235,15 +1261,15 @@ class StudyPlanService {
     // Company recommendations based on target companies and performance
     const companyEntries = Object.entries(progress.companyProgress);
     const laggingCompanies = companyEntries
-      .filter(([company, stats]) => 
-        studyPlan.targetCompanies.includes(company) && 
-        stats.total >= 3 && 
+      .filter(([company, stats]) =>
+        studyPlan.targetCompanies.includes(company) &&
+        stats.total >= 3 &&
         (stats.completed / stats.total) < 0.6
       )
       .sort((a, b) => (a[1].completed / a[1].total) - (b[1].completed / b[1].total))
       .map(([company]) => company);
 
-    const suggestedCompanies = laggingCompanies.length > 0 
+    const suggestedCompanies = laggingCompanies.length > 0
       ? laggingCompanies.slice(0, 2)
       : studyPlan.targetCompanies.slice(0, 2);
 
@@ -1266,7 +1292,7 @@ class StudyPlanService {
   } {
     const allProblems = studyPlan.schedule.flatMap(session => session.problems);
     const problemsWithQuality = allProblems.filter(p => p.qualityScore !== undefined);
-    
+
     if (problemsWithQuality.length === 0) {
       return {
         qualityDistribution: {},
@@ -1310,7 +1336,7 @@ class StudyPlanService {
 
     // Generate quality recommendations
     const qualityRecommendations: string[] = [];
-    
+
     // Calculate ratios for recommendations
     const hiddenGemsRatio = hiddenGemsCount / problemsWithQuality.length;
     const classicsRatio = interviewClassicsCount / problemsWithQuality.length;
@@ -1363,24 +1389,24 @@ class StudyPlanService {
   ): StudyProblem[] {
     const adaptiveRecs = this.getAdaptiveRecommendations(studyPlan);
     const qualityInsights = this.getQualityInsights(studyPlan);
-    
+
     // Filter available problems based on adaptive recommendations
     const filteredProblems = availableProblems.filter(problem => {
       // Check if difficulty matches recommendations
       const difficultyMatch = adaptiveRecs.suggestedDifficulty.includes(problem.difficulty as any);
-      
+
       // Check if topics match recommendations
-      const topicMatch = adaptiveRecs.suggestedTopics.length === 0 || 
-        problem.topics.some(topic => 
-          adaptiveRecs.suggestedTopics.some(suggestedTopic => 
+      const topicMatch = adaptiveRecs.suggestedTopics.length === 0 ||
+        problem.topics.some(topic =>
+          adaptiveRecs.suggestedTopics.some(suggestedTopic =>
             topic.toLowerCase().includes(suggestedTopic.toLowerCase())
           )
         );
-      
+
       // Check if company matches recommendations
       const companyMatch = adaptiveRecs.suggestedCompanies.length === 0 ||
         adaptiveRecs.suggestedCompanies.includes(problem.company);
-      
+
       return difficultyMatch && (topicMatch || companyMatch);
     });
 

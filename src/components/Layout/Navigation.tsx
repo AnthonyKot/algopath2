@@ -1,12 +1,13 @@
 import React from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
+import { Dashboard, Business, MenuBook } from '@mui/icons-material';
 import { useAppContext } from '../../hooks/useAppContext';
 import { PageContainer } from './PageContainer';
 
 const navigationTabs = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'company', label: 'Company Research' },
-  { value: 'study', label: 'Study Planner' },
+  { value: 'overview', label: 'Dashboard', icon: Dashboard },
+  { value: 'company', label: 'Companies', icon: Business },
+  { value: 'study', label: 'Planner', icon: MenuBook },
 ] as const;
 
 export function Navigation() {
@@ -20,35 +21,38 @@ export function Navigation() {
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', pt: 1 }}>
+    <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
       <PageContainer>
         <Tabs
           value={state.currentView}
           onChange={handleTabChange}
           aria-label="navigation tabs"
           sx={{
-            minHeight: 56,
+            minHeight: 48,
             '& .MuiTab-root': {
-              minHeight: 56,
-              fontSize: '0.95rem',
-              fontWeight: 600,
+              minHeight: 48,
+              fontSize: '0.9rem',
+              fontWeight: 500,
               textTransform: 'none',
               color: 'text.secondary',
+              px: 2,
+              gap: 1,
               '&.Mui-selected': {
-                color: 'primary.main',
+                color: 'text.primary',
+                fontWeight: 600,
               },
             },
             '& .MuiTabs-indicator': {
-              height: 3,
-              borderRadius: 3,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              background: 'linear-gradient(90deg, #6366f1 0%, #14b8a6 100%)',
+              height: 2,
+              backgroundColor: 'primary.main',
             }
           }}
         >
           {navigationTabs.map((tab) => (
             <Tab
               key={tab.value}
+              icon={<tab.icon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
               label={tab.label}
               value={tab.value}
               disableRipple
@@ -59,3 +63,4 @@ export function Navigation() {
     </Box>
   );
 }
+

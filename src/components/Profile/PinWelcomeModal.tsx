@@ -4,7 +4,6 @@ import {
   Button,
   Chip,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -25,12 +24,13 @@ const PIN_REGEX = /^\d{4}$/;
 type Step = 'welcome' | 'create' | 'import';
 
 export function PinWelcomeModal() {
-  const { profile, generatePin, saveProfile } = useUserProfile();
+  const { profile, generatePin, login } = useUserProfile();
   const [dismissed, setDismissed] = useState(false);
   const [step, setStep] = useState<Step>('welcome');
   const [pinInput, setPinInput] = useState('');
   const [aliasInput, setAliasInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleClose = () => {
     setDismissed(true);
@@ -40,13 +40,21 @@ export function PinWelcomeModal() {
     setStep('welcome');
   };
 
-  const handleSubmitPin = () => {
+  const handleSubmitPin = async () => {
     if (!PIN_REGEX.test(pinInput)) {
       setError('PIN must be exactly 4 digits');
       return;
     }
-    saveProfile({ pin: pinInput });
-    handleClose();
+
+    setIsSubmitting(true);
+    const success = await login(pinInput);
+    setIsSubmitting(false);
+
+    if (success) {
+      handleClose();
+    } else {
+      setError('PIN not found or connection failed');
+    }
   };
 
   const handleCreateProfile = () => {
@@ -144,7 +152,7 @@ export function PinWelcomeModal() {
               I have a PIN code
             </Button>
             <Button variant="text" onClick={handleClose}>
-              Continue without PIN
+              Continue as Guest
             </Button>
           </Stack>
         )}
@@ -207,13 +215,7 @@ export function PinWelcomeModal() {
           </Stack>
         )}
       </DialogContent>
-      {!showCreate && !showImport && (
-        <DialogActions sx={{ justifyContent: 'center' }}>
-          <Button onClick={handleClose} color="inherit">
-            Maybe later
-          </Button>
-        </DialogActions>
-      )}
+
     </Dialog>
   );
 }

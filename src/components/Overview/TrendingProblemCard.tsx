@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Box,
-    Card,
-    CardContent,
+    Paper,
     Typography,
     Chip,
     Button,
     Skeleton,
-    IconButton,
-    Divider
+    Divider,
+    Stack
 } from '@mui/material';
 import {
-    TrendingUp as TrendingUpIcon,
-    Refresh as RefreshIcon,
-    OpenInNew as OpenInNewIcon
+    CalendarToday as CalendarIcon,
+    OpenInNew as OpenInNewIcon,
+    CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { staticDataService } from '../../services/staticDataService';
 import { getFrequencyStars, getFrequencyColor } from '../../utils/frequencyRating';
 import { FrequencyStars } from '../Common/FrequencyStars';
+import { DIFFICULTY_COLORS } from '../../theme/colors';
 
 interface Problem {
     title: string;
@@ -31,19 +31,50 @@ interface Problem {
 }
 
 /**
- * Displays two random trending problems (5-star and 4-star)
+ * Seeded random number generator for consistent daily challenges
+ * All users will see the same problems on the same day
+ */
+function seededRandom(seed: number): () => number {
+    return function () {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        return seed / 0x7fffffff;
+    };
+}
+
+/**
+ * Get today's date as a seed (YYYYMMDD format)
+ */
+function getTodaySeed(): number {
+    const now = new Date();
+    return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+}
+
+/**
+ * Displays daily challenge problems - same for all users on the same day
  */
 export function TrendingProblemCard() {
     const [problems, setProblems] = useState<Problem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const loadRandomProblems = async () => {
+    // Get today's date string for display
+    const todayString = useMemo(() => {
+        return new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
+        });
+    }, []);
+
+    const loadDailyChallenges = async () => {
         try {
             setLoading(true);
             const allProblems = await staticDataService.loadAllProblems();
 
-            // Tiered frequency thresholds:
-            // Easy: 5+ stars (>=89.6), Medium: 4+ stars (>=70), Hard: 3+ stars (>=56.4)
+            // Create seeded random for today
+            const seed = getTodaySeed();
+            const random = seededRandom(seed);
+
+            // Tiered frequency thresholds
             const easyPool = allProblems.filter(p =>
                 p.difficulty === 'EASY' && (p.frequency || 0) >= 89.6
             );
@@ -54,15 +85,16 @@ export function TrendingProblemCard() {
                 p.difficulty === 'HARD' && (p.frequency || 0) >= 56.4
             );
 
-            const pickRandom = (pool: typeof allProblems) => {
+            const pickSeeded = (pool: typeof allProblems) => {
                 if (pool.length === 0) return null;
-                return pool[Math.floor(Math.random() * pool.length)] as Problem;
+                const index = Math.floor(random() * pool.length);
+                return pool[index] as Problem;
             };
 
             const selected: Problem[] = [];
-            const easy = pickRandom(easyPool);
-            const medium = pickRandom(mediumPool);
-            const hard = pickRandom(hardPool);
+            const easy = pickSeeded(easyPool);
+            const medium = pickSeeded(mediumPool);
+            const hard = pickSeeded(hardPool);
 
             if (easy) selected.push(easy);
             if (medium) selected.push(medium);
@@ -78,22 +110,22 @@ export function TrendingProblemCard() {
                 setProblems(selected);
             }
         } catch (error) {
-            console.error('Failed to load trending problems:', error);
+            console.error('Failed to load daily challenges:', error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadRandomProblems();
+        loadDailyChallenges();
     }, []);
 
-    const getDifficultyColor = (difficulty: string) => {
+    const getDifficultyChipColor = (difficulty: string) => {
         switch (difficulty) {
-            case 'EASY': return 'success';
-            case 'MEDIUM': return 'warning';
-            case 'HARD': return 'error';
-            default: return 'default';
+            case 'EASY': return { bg: DIFFICULTY_COLORS.easy, text: 'white' };
+            case 'MEDIUM': return { bg: DIFFICULTY_COLORS.medium, text: 'white' };
+            case 'HARD': return { bg: DIFFICULTY_COLORS.hard, text: 'white' };
+            default: return { bg: '#888', text: 'white' };
         }
     };
 
@@ -101,6 +133,7 @@ export function TrendingProblemCard() {
         const { stars } = problem.frequency
             ? getFrequencyStars(problem.frequency)
             : { stars: 0 };
+        const colors = getDifficultyChipColor(problem.difficulty);
 
         return (
             <Box sx={{ py: 1.5 }}>
@@ -108,14 +141,19 @@ export function TrendingProblemCard() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <Typography
                         variant="subtitle1"
-                        sx={{ fontFamily: 'Outfit, sans-serif', fontWeight: 600, flex: 1 }}
+                        sx={{ fontWeight: 600, flex: 1, lineHeight: 1.3 }}
                     >
                         {problem.title}
                     </Typography>
                     <Chip
                         label={problem.difficulty}
                         size="small"
-                        color={getDifficultyColor(problem.difficulty) as any}
+                        sx={{
+                            bgcolor: colors.bg,
+                            color: colors.text,
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                        }}
                     />
                 </Box>
 
@@ -157,64 +195,72 @@ export function TrendingProblemCard() {
 
     if (loading) {
         return (
-            <Card sx={{ height: '100%' }}>
-                <CardContent>
-                    <Skeleton variant="text" width="40%" height={32} />
-                    <Skeleton variant="text" width="80%" height={28} sx={{ my: 1 }} />
-                    <Skeleton variant="text" width="60%" height={20} />
-                    <Divider sx={{ my: 1.5 }} />
-                    <Skeleton variant="text" width="80%" height={28} />
-                    <Skeleton variant="text" width="60%" height={20} />
-                </CardContent>
-            </Card>
+            <Paper elevation={0} sx={{ borderRadius: 4, p: 3, bgcolor: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+                <Skeleton variant="text" width="40%" height={32} />
+                <Skeleton variant="text" width="80%" height={28} sx={{ my: 1 }} />
+                <Skeleton variant="text" width="60%" height={20} />
+            </Paper>
         );
     }
 
     if (problems.length === 0) return null;
 
     return (
-        <Card
+        <Paper
+            elevation={0}
             sx={{
-                height: '100%',
-                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(20, 184, 166, 0.08) 100%)',
+                borderRadius: 4,
+                p: 3,
+                bgcolor: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
                 border: '1px solid',
-                borderColor: 'primary.main',
-                borderRadius: 3,
+                borderColor: 'rgba(139, 92, 246, 0.2)',
             }}
         >
-            <CardContent sx={{ py: 2 }}>
+            <Stack spacing={2}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                        <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 600 }}>
-                            Trending Problems
-                        </Typography>
-                    </Box>
-                    <IconButton size="small" onClick={loadRandomProblems} color="primary">
-                        <RefreshIcon fontSize="small" />
-                    </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <CalendarIcon sx={{ color: '#8b5cf6', fontSize: 22 }} />
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                                Daily Challenge
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {todayString}
+                            </Typography>
+                        </Box>
+                    </Stack>
+                    <Chip
+                        icon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+                        label="Same for all"
+                        size="small"
+                        sx={{
+                            bgcolor: 'rgba(16, 185, 129, 0.1)',
+                            color: '#10b981',
+                            fontWeight: 500,
+                            '& .MuiChip-icon': { color: '#10b981' }
+                        }}
+                    />
                 </Box>
 
-                {/* Problem 1 */}
+                {/* Problems */}
                 <ProblemRow problem={problems[0]} />
 
-                {/* Divider + Problem 2 */}
                 {problems.length > 1 && (
                     <>
-                        <Divider sx={{ my: 0.5 }} />
+                        <Divider />
                         <ProblemRow problem={problems[1]} />
                     </>
                 )}
 
-                {/* Divider + Problem 3 */}
                 {problems.length > 2 && (
                     <>
-                        <Divider sx={{ my: 0.5 }} />
+                        <Divider />
                         <ProblemRow problem={problems[2]} />
                     </>
                 )}
-            </CardContent>
-        </Card>
+            </Stack>
+        </Paper>
     );
 }

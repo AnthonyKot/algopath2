@@ -9,8 +9,14 @@ import {
   Select,
   MenuItem,
   Paper,
-  Stack
+  Stack,
+  Button,
+  Slide,
+  AppBar,
+  Toolbar,
+  Container
 } from '@mui/material';
+import { CompareArrows, Close, ClearAll } from '@mui/icons-material';
 import { CompanyListRow } from './CompanyListRow';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 import { ErrorMessage } from '../Common/ErrorMessage';
@@ -22,6 +28,7 @@ interface CompanyListProps {
   error: string | null;
   onCompanyClick?: (companyName: string) => void;
   onRetry?: () => void;
+  onCompare?: (companies: string[]) => void;
 }
 
 const ITEMS_PER_PAGE_OPTIONS = [12, 24, 48, 96];
@@ -31,10 +38,12 @@ export function CompanyList({
   loading,
   error,
   onCompanyClick,
-  onRetry
+  onRetry,
+  onCompare
 }: CompanyListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(24);
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
   // Calculate pagination
   const totalPages = Math.ceil(companies.length / itemsPerPage);
@@ -44,13 +53,25 @@ export function CompanyList({
 
   const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleItemsPerPageChange = (event: any) => {
     setItemsPerPage(event.target.value);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
+  };
+
+  const handleSelectCompany = (companyName: string, selected: boolean) => {
+    if (selected) {
+      if (selectedCompanies.length >= 10) return;
+      setSelectedCompanies(prev => [...prev, companyName]);
+    } else {
+      setSelectedCompanies(prev => prev.filter(c => c !== companyName));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCompanies([]);
   };
 
   // Loading state
@@ -91,7 +112,7 @@ export function CompanyList({
   }
 
   return (
-    <Box>
+    <Box sx={{ pb: 8 }}>
       {/* Error banner for partial failures */}
       {error && companies.length > 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
@@ -102,10 +123,10 @@ export function CompanyList({
       )}
 
       {/* Pagination Controls - Top */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         mb: 3,
         flexWrap: 'wrap',
         gap: 2
@@ -113,7 +134,7 @@ export function CompanyList({
         <Typography variant="body1" color="text.secondary">
           Showing {startIndex + 1}-{Math.min(endIndex, companies.length)} of {companies.length} companies
         </Typography>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Per Page</InputLabel>
@@ -129,7 +150,7 @@ export function CompanyList({
               ))}
             </Select>
           </FormControl>
-          
+
           {totalPages > 1 && (
             <Pagination
               count={totalPages}
@@ -149,23 +170,18 @@ export function CompanyList({
             key={company.company}
             company={company}
             onClick={onCompanyClick}
+            selected={selectedCompanies.includes(company.company)}
+            onSelect={handleSelectCompany}
           />
         ))}
       </Stack>
 
-      {/* Loading overlay for additional data */}
-      {loading && companies.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <LoadingSpinner message="Updating company data..." />
-        </Box>
-      )}
-
       {/* Pagination Controls - Bottom */}
       {totalPages > 1 && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          mt: 4 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          mt: 4
         }}>
           <Pagination
             count={totalPages}
@@ -178,6 +194,59 @@ export function CompanyList({
           />
         </Box>
       )}
+
+      {/* Floating Compare Bar */}
+      <Slide direction="up" in={selectedCompanies.length > 0} mountOnEnter unmountOnExit>
+        <AppBar position="fixed" color="default" sx={{ top: 'auto', bottom: 0, borderTop: '1px solid rgba(0,0,0,0.12)', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+          <Container maxWidth="xl">
+            <Toolbar sx={{ justifyContent: 'space-between', minHeight: { xs: 64, md: 80 } }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Box sx={{
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700
+                }}>
+                  {selectedCompanies.length}
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Selected for comparison
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<ClearAll />}
+                  onClick={handleClearSelection}
+                  sx={{ color: 'text.secondary' }}
+                >
+                  Clear
+                </Button>
+              </Stack>
+
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<CompareArrows />}
+                disabled={selectedCompanies.length < 2}
+                onClick={() => onCompare?.(selectedCompanies)}
+                sx={{
+                  px: 4,
+                  borderRadius: 3,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                Compare ({selectedCompanies.length})
+              </Button>
+            </Toolbar>
+          </Container>
+        </AppBar>
+      </Slide>
     </Box>
   );
 }

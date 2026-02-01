@@ -4,7 +4,6 @@ import { OverviewPage } from '../pages/OverviewPage';
 import { CompanyResearchPage } from '../pages/CompanyResearchPage';
 import { TopicAnalysisPage } from '../pages/TopicAnalysisPage';
 import { StudyPlannerPage } from '../pages/StudyPlannerPage';
-import { AnalyticsPage } from '../pages/AnalyticsPage';
 import BookmarksPage from '../pages/BookmarksPage';
 import { LoadingSpinner } from './Common';
 
@@ -22,10 +21,10 @@ export function AppRouter() {
         return <TopicAnalysisPage />;
       case 'study':
         return <StudyPlannerPage />;
-      case 'analytics':
-        return <AnalyticsPage />;
       case 'bookmarks':
         return <BookmarksPage />;
+      // Analytics removed - redirect to overview
+      case 'analytics':
       default:
         return <OverviewPage />;
     }
@@ -37,3 +36,4 @@ export function AppRouter() {
     </React.Suspense>
   );
 }
+

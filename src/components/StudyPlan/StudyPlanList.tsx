@@ -29,6 +29,7 @@ import {
 import type { StudyPlan } from '../../types';
 import { studyPlanService } from '../../services/studyPlanService';
 import { EmptyState } from '../Common/EmptyState';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 interface StudyPlanListProps {
   studyPlans: StudyPlan[];
@@ -44,9 +45,12 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
   const [importData, setImportData] = useState('');
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
+  const { profile } = useUserProfile();
+  const userId = profile?.pin;
+
   // Check storage on component mount
   useState(() => {
-    const storageInfo = studyPlanService.getStorageInfo();
+    const storageInfo = studyPlanService.getStorageInfo(userId);
     if (storageInfo.percentage > 80) {
       setStorageWarning(`Storage is ${storageInfo.percentage}% full (${storageInfo.used}KB used). Consider exporting your data.`);
     }
@@ -81,7 +85,7 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
 
   const handleExport = () => {
     try {
-      const exportData = studyPlanService.exportStudyPlans();
+      const exportData = studyPlanService.exportStudyPlans(userId);
       const blob = new Blob([exportData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -99,7 +103,7 @@ export function StudyPlanList({ studyPlans, onSelect, onDelete, onCreateNew, onR
 
   const handleImport = () => {
     try {
-      const result = studyPlanService.importStudyPlans(importData);
+      const result = studyPlanService.importStudyPlans(importData, userId);
       if (result.success) {
         onRefresh();
         setImportDialog(false);

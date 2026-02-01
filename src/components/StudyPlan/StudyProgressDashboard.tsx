@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import type { StudyPlan, StudyPlanMetrics } from '../../types';
 import { studyPlanService } from '../../services/studyPlanService';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 interface StudyProgressDashboardProps {
   studyPlan: StudyPlan;
@@ -44,27 +45,31 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
     type: 'streak' | 'difficulty' | 'topics' | 'companies' | null;
   }>({ open: false, type: null });
 
+  const { profile } = useUserProfile();
+  const userId = profile?.pin;
+
   const progress = studyPlan.progress;
-  
+
   // Get feedback and recommendations
   const feedback = useMemo(() => studyPlanService.generateFeedback(studyPlan), [studyPlan]);
   const adaptiveRecs = useMemo(() => studyPlanService.getAdaptiveRecommendations(studyPlan), [studyPlan]);
-  
+
   const handleToggleBookmark = (sessionId: string, problemTitle: string, currentNotes: string = '') => {
     const isBookmarked = currentNotes.includes('[BOOKMARK]');
-    const newNotes = isBookmarked 
+    const newNotes = isBookmarked
       ? currentNotes.replace('[BOOKMARK]', '').trim()
       : `[BOOKMARK] ${currentNotes}`.trim();
-    
+
     studyPlanService.updateProblemStatus(
       studyPlan.id,
       sessionId,
       problemTitle,
       'in_progress', // Keep current status
-      newNotes
+      newNotes,
+      userId
     );
 
-    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id);
+    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id, userId);
     if (updatedPlan) {
       onUpdate(updatedPlan);
     }
@@ -120,11 +125,11 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
       </Box>
 
       {/* Detailed Breakdowns */}
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, 
-        gap: 3, 
-        mb: 4 
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+        gap: 3,
+        mb: 4
       }}>
         {/* Difficulty Progress */}
         <Card>
@@ -138,16 +143,16 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                 View Details
               </Button>
             </Box>
-            
+
             <Stack spacing={2}>
               {Object.entries(progress.difficultyBreakdown).map(([difficulty, stats]) => {
                 const percentage = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
                 const color: ChipProps['color'] = difficulty === 'EASY'
                   ? 'success'
                   : difficulty === 'MEDIUM'
-                  ? 'warning'
-                  : 'error';
-                
+                    ? 'warning'
+                    : 'error';
+
                 return (
                   <Box key={difficulty}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -162,9 +167,9 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                       color={color}
                       sx={{ height: 6, borderRadius: 3 }}
                     />
-                </Box>
-              );
-            })}
+                  </Box>
+                );
+              })}
             </Stack>
           </CardContent>
         </Card>
@@ -175,7 +180,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
             <Typography variant="h6" gutterBottom>
               Recent Activity
             </Typography>
-            
+
             <Stack spacing={2}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" color="text.secondary">
@@ -185,7 +190,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                   {metrics.last7DaysSessions}
                 </Typography>
               </Box>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" color="text.secondary">
                   Average problems per day
@@ -194,7 +199,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                   {progress.averageProblemsPerDay.toFixed(1)}
                 </Typography>
               </Box>
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="body2" color="text.secondary">
                   Problems skipped
@@ -231,13 +236,13 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
             <Typography variant="h6" gutterBottom>
               Bookmarked Problems ({metrics.bookmarkedCount})
             </Typography>
-            
+
             <List dense>
               {metrics.bookmarkedProblems.slice(0, 5).map((problem, index) => {
-                const session = studyPlan.schedule.find(s => 
+                const session = studyPlan.schedule.find(s =>
                   s.problems.some(p => p.title === problem.title)
                 );
-                
+
                 return (
                   <ListItem key={index} divider>
                     <ListItemIcon>
@@ -273,7 +278,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                 );
               })}
             </List>
-            
+
             {metrics.bookmarkedCount > 5 && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
                 ... and {metrics.bookmarkedCount - 5} more bookmarked problems
@@ -289,12 +294,12 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
           <Typography variant="h6" gutterBottom>
             Personalized Feedback & Recommendations
           </Typography>
-          
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, 
-            gap: 3, 
-            mb: 3 
+
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            gap: 3,
+            mb: 3
           }}>
             {/* Feedback */}
             <Box>
@@ -349,7 +354,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
               {adaptiveRecs.reasoning}
             </Typography>
           </Alert>
-          
+
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -357,16 +362,16 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
               </Typography>
               <Stack direction="row" spacing={0.5} flexWrap="wrap">
                 {adaptiveRecs.suggestedDifficulty.map(diff => (
-                  <Chip 
-                    key={diff} 
-                    label={diff} 
-                    size="small" 
+                  <Chip
+                    key={diff}
+                    label={diff}
+                    size="small"
                     color={diff === 'EASY' ? 'success' : diff === 'MEDIUM' ? 'warning' : 'error'}
                   />
                 ))}
               </Stack>
             </Box>
-            
+
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Focus Topics
@@ -377,7 +382,7 @@ export function StudyProgressDashboard({ studyPlan, metrics, onUpdate }: StudyPr
                 ))}
               </Stack>
             </Box>
-            
+
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Priority Companies

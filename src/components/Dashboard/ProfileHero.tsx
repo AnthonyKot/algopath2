@@ -9,8 +9,9 @@ import {
   Typography,
   Paper
 } from '@mui/material';
-import { Share as ShareIcon, Logout as LogoutIcon, FireHydrantAlt as FireIcon } from '@mui/icons-material';
+import { Share as ShareIcon, Logout as LogoutIcon, LocalFireDepartment as FireIcon } from '@mui/icons-material';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { DIFFICULTY_COLORS, GRADIENTS } from '../../theme/colors';
 
 interface ProfileHeroProps {
   solvedCounts?: {
@@ -50,9 +51,10 @@ export function ProfileHero({ solvedCounts, streakDays }: ProfileHeroProps) {
   };
 
   const statBoxes = [
-    { label: 'Easy', value: solvedCounts?.easy ?? 0, color: '#c4f5d5' },
-    { label: 'Medium', value: solvedCounts?.medium ?? 0, color: '#ffecc2' },
-    { label: 'Hard', value: solvedCounts?.hard ?? 0, color: '#ffd6d9' }
+    { label: 'Total', value: totalSolved, color: '#8b5cf6', bgColor: 'rgba(139, 92, 246, 0.1)' },
+    { label: 'Easy', value: solvedCounts?.easy ?? 0, color: DIFFICULTY_COLORS.easy, bgColor: 'rgba(16, 185, 129, 0.1)' },
+    { label: 'Medium', value: solvedCounts?.medium ?? 0, color: DIFFICULTY_COLORS.medium, bgColor: 'rgba(245, 158, 11, 0.1)' },
+    { label: 'Hard', value: solvedCounts?.hard ?? 0, color: DIFFICULTY_COLORS.hard, bgColor: 'rgba(239, 68, 68, 0.1)' }
   ];
 
   return (
@@ -61,14 +63,14 @@ export function ProfileHero({ solvedCounts, streakDays }: ProfileHeroProps) {
       sx={{
         borderRadius: 4,
         p: { xs: 3, md: 4 },
-        background: 'linear-gradient(120deg, #f0d8ff, #fde5f5)',
-        boxShadow: '0 20px 60px rgba(99, 102, 241, 0.12)'
+        background: 'linear-gradient(135deg, #f0f5ff 0%, #faf5ff 100%)',
+        boxShadow: '0 4px 20px rgba(99, 102, 241, 0.08)'
       }}
     >
       <Stack spacing={3}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems={{ xs: 'flex-start', md: 'center' }}>
           <Stack direction="row" spacing={2} alignItems="center" flex={1}>
-            <Avatar sx={{ width: 72, height: 72, bgcolor: 'rgba(255,255,255,0.6)', color: 'primary.main', fontSize: 32, fontWeight: 700 }}>
+            <Avatar sx={{ width: 64, height: 64, bgcolor: '#8b5cf6', color: 'white', fontSize: 24, fontWeight: 700 }}>
               {alias.slice(0, 2).toUpperCase()}
             </Avatar>
             <Box>
@@ -76,33 +78,47 @@ export function ProfileHero({ solvedCounts, streakDays }: ProfileHeroProps) {
                 {alias}
               </Typography>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                <Chip label={`PIN ${pin}`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.8)' }} />
-                <Chip icon={<FireIcon fontSize="small" />} label={`${streakDays ?? 0} day streak`} size="small" color="warning" />
+                <Chip label={`PIN ${pin}`} size="small" sx={{ bgcolor: 'white', fontWeight: 500 }} />
+                <Chip
+                  icon={<FireIcon fontSize="small" />}
+                  label={`${streakDays ?? 0} day streak`}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(245, 158, 11, 0.15)', color: DIFFICULTY_COLORS.medium, fontWeight: 500 }}
+                />
               </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Level {level} · {levelProgress}% to next level
-              </Typography>
             </Box>
           </Stack>
-          <Box sx={{ width: '100%', maxWidth: 360 }}>
-            <Typography variant="caption" color="text.secondary">
-              XP Progress
+          <Box sx={{ width: '100%', maxWidth: 320 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+              Level {level} · {levelProgress}% to next
             </Typography>
             <LinearProgress
               variant="determinate"
               value={levelProgress}
-              sx={{ mt: 0.5, mb: 1.5, height: 10, borderRadius: 5, bgcolor: 'rgba(255,255,255,0.4)', '& .MuiLinearProgress-bar': { borderRadius: 5 } }}
+              sx={{
+                mt: 0.5,
+                mb: 1.5,
+                height: 12,
+                borderRadius: 6,
+                bgcolor: 'rgba(139, 92, 246, 0.15)',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 6,
+                  background: GRADIENTS.xpBar,
+                }
+              }}
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
               <Button
                 variant="contained"
+                size="small"
                 startIcon={<ShareIcon />}
                 onClick={handleShare}
               >
-                {copied ? 'Copied!' : 'Share progress'}
+                {copied ? 'Copied!' : 'Share'}
               </Button>
               <Button
                 variant="outlined"
+                size="small"
                 startIcon={<LogoutIcon />}
                 onClick={clearProfile}
               >
@@ -112,22 +128,30 @@ export function ProfileHero({ solvedCounts, streakDays }: ProfileHeroProps) {
           </Box>
         </Stack>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           {statBoxes.map((stat) => (
             <Box
               key={stat.label}
               sx={{
                 flex: 1,
-                p: 2,
+                p: 2.5,
                 borderRadius: 3,
-                bgcolor: stat.color,
-                textAlign: 'center'
+                bgcolor: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                textAlign: 'center',
+                transition: 'transform 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                },
               }}
             >
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: stat.color, mb: 0.5 }}
+              >
                 {stat.value}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                 {stat.label}
               </Typography>
             </Box>
@@ -137,3 +161,4 @@ export function ProfileHero({ solvedCounts, streakDays }: ProfileHeroProps) {
     </Paper>
   );
 }
+

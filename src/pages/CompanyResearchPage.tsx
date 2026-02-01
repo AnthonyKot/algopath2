@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Box,
@@ -8,19 +7,26 @@ import {
   Stack,
   Button
 } from '@mui/material';
-import { Business as BusinessIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Business as BusinessIcon, Refresh as RefreshIcon, ArrowBack } from '@mui/icons-material';
 import {
   CompanyList,
   CompanyFilters,
   CompanyDetail
 } from '../components/Company';
+import { CompanyComparisonChart } from '../components/Analytics/CompanyComparisonChart';
 import { ExportMenu } from '../components/Common/ExportMenu';
 import { PageTransition } from '../components/Layout/PageTransition';
+import { LoadingSpinner } from '../components/Common'; // Fixed import
 import { useCompanyData, useCompanyDetails } from '../hooks/useCompanyData';
+import { analyticsService } from '../services/analyticsService';
 import type { CompanyFilterCriteria } from '../types/company';
+import type { CompanyComparison } from '../types/analytics';
 
 export function CompanyResearchPage() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [comparingCompanies, setComparingCompanies] = useState<string[] | null>(null);
+  const [comparisonData, setComparisonData] = useState<CompanyComparison | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   const {
     filteredCompanies,
@@ -46,10 +52,27 @@ export function CompanyResearchPage() {
 
   const handleBackToList = () => {
     setSelectedCompany(null);
+    setComparingCompanies(null);
+    setComparisonData(null);
   };
 
   const handleFiltersChange = (filters: CompanyFilterCriteria) => {
     applyFilters(filters);
+  };
+
+  const handleCompare = async (companies: string[]) => {
+    if (companies.length < 2) return;
+
+    try {
+      setComparingCompanies(companies);
+      setComparisonLoading(true);
+      const data = await analyticsService.compareCompanies(companies);
+      setComparisonData(data);
+    } catch (err) {
+      console.error('Comparison failed:', err);
+    } finally {
+      setComparisonLoading(false);
+    }
   };
 
   // Show company detail view
@@ -63,6 +86,38 @@ export function CompanyResearchPage() {
           onBack={handleBackToList}
           onRetry={refetchDetails}
         />
+      </PageTransition>
+    );
+  }
+
+  // Show comparison view
+  if (comparingCompanies) {
+    return (
+      <PageTransition>
+        <Stack spacing={3}>
+          <Box>
+            <Button
+              startIcon={<ArrowBack />}
+              onClick={handleBackToList}
+              sx={{ mb: 2 }}
+            >
+              Back to List
+            </Button>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Company Comparison
+            </Typography>
+          </Box>
+
+          {comparisonLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <LoadingSpinner message="Analyzing companies..." size={60} />
+            </Box>
+          ) : comparisonData ? (
+            <CompanyComparisonChart comparison={comparisonData} />
+          ) : (
+            <Alert severity="error">Failed to load comparison data.</Alert>
+          )}
+        </Stack>
       </PageTransition>
     );
   }
@@ -147,6 +202,7 @@ export function CompanyResearchPage() {
           error={error}
           onCompanyClick={handleCompanyClick}
           onRetry={refetch}
+          onCompare={handleCompare}
         />
       </Stack>
     </PageTransition>

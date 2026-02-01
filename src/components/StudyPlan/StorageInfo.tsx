@@ -1,12 +1,14 @@
 import { Card, CardContent, Typography, LinearProgress, Box, Button } from '@mui/material';
 import { studyPlanService } from '../../services/studyPlanService';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 interface StorageInfoProps {
   onExport: () => void;
 }
 
 export function StorageInfo({ onExport }: StorageInfoProps) {
-  const storage = studyPlanService.getStorageInfo();
+  const { profile } = useUserProfile();
+  const storage = studyPlanService.getStorageInfo(profile?.pin);
 
   return (
     <Card>
@@ -19,7 +21,7 @@ export function StorageInfo({ onExport }: StorageInfoProps) {
             <LinearProgress
               variant="determinate"
               value={Math.min(storage.percentage, 100)}
-              sx={{ height: 8, borderRadius: 4, mb: 1 }}
+              sx={{ height: 14, borderRadius: 7, mb: 1 }}
             />
             <Typography variant="caption" color="text.secondary">
               Used: {storage.used} KB · Available: {Math.max(storage.available, 0)} KB

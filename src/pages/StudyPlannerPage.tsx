@@ -15,14 +15,18 @@ import {
   Stack
 } from '@mui/material';
 import {
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  Bookmarks as BookmarksIcon,
+  ViewKanban as ViewKanbanIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material';
-import { StudyPlanForm, StudyPlanView, StudyPlanList, StorageInfo, QuickPlanRow, TopicSummaryGrid } from '../components/StudyPlan';
+import { StudyPlanForm, StudyPlanView, StudyPlanList, StorageInfo, TopicSummaryGrid } from '../components/StudyPlan';
 import { LoadingSpinner } from '../components/Common';
 import { PageTransition } from '../components/Layout/PageTransition';
 import { ExportService } from '../services/exportService';
 import { companyService } from '../services/companyService';
 import { studyPlanService } from '../services/studyPlanService';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { staticDataService } from '../services/staticDataService';
 import { apiClient, ApiClientError } from '../services/apiClient';
 import type {
@@ -59,9 +63,12 @@ export function StudyPlannerPage() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { profile } = useUserProfile();
+  const userId = profile?.pin;
+
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [userId]);
 
   const loadInitialData = async () => {
     try {
@@ -72,7 +79,7 @@ export function StudyPlannerPage() {
       setCompanies(companiesData);
 
       // Load existing study plans
-      const existingPlans = studyPlanService.getStudyPlans();
+      const existingPlans = studyPlanService.getStudyPlans(userId);
       setStudyPlans(existingPlans);
 
     } catch (error) {
@@ -205,7 +212,7 @@ export function StudyPlannerPage() {
       );
 
       // Save the plan
-      studyPlanService.saveStudyPlan(newPlan);
+      studyPlanService.saveStudyPlan(newPlan, userId);
 
       // Update local state
       setStudyPlans(prev => [...prev, newPlan]);
@@ -254,7 +261,7 @@ export function StudyPlannerPage() {
   };
 
   const handleDeletePlan = (planId: string) => {
-    studyPlanService.deleteStudyPlan(planId);
+    studyPlanService.deleteStudyPlan(planId, userId);
     setStudyPlans(prev => prev.filter(plan => plan.id !== planId));
 
     if (selectedPlan?.id === planId) {
@@ -292,17 +299,17 @@ export function StudyPlannerPage() {
       const importedPlans = await ExportService.importStudyPlans(file);
 
       // Add imported plans to existing plans
-      const existingPlans = studyPlanService.getStudyPlans();
+      const existingPlans = studyPlanService.getStudyPlans(userId);
       const newPlans = importedPlans.filter(
         importedPlan => !existingPlans.some(existing => existing.id === importedPlan.id)
       );
 
       newPlans.forEach(plan => {
-        studyPlanService.saveStudyPlan(plan);
+        studyPlanService.saveStudyPlan(plan, userId);
       });
 
       // Refresh the study plans list
-      const updatedPlans = studyPlanService.getStudyPlans();
+      const updatedPlans = studyPlanService.getStudyPlans(userId);
       setStudyPlans(updatedPlans);
 
       setSuccessMessage(`Successfully imported ${newPlans.length} study plan(s).`);
@@ -335,7 +342,7 @@ export function StudyPlannerPage() {
           sx={{
             borderRadius: 4,
             p: { xs: 2, md: 4 },
-            background: 'linear-gradient(120deg, #eafbea, #e6f2ff)',
+            background: 'linear-gradient(120deg, #f0f7ff, #fdf4ff)',
             boxShadow: '0 20px 60px rgba(15,23,42,0.08)'
           }}
         >
@@ -363,9 +370,24 @@ export function StudyPlannerPage() {
               </Stack>
             </Stack>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <PlannerStat label="Saved plans" value={studyPlans.length} />
-              <PlannerStat label="Active view" value={viewMode === 'list' ? 'Overview' : viewMode === 'create' ? 'Create' : selectedPlan?.name || 'Plan'} />
-              <PlannerStat label="Companies tracked" value={companies.length} />
+              <PlannerStat
+                label="Saved plans"
+                value={studyPlans.length}
+                accent="#d9e7ff"
+                icon={<BookmarksIcon />}
+              />
+              <PlannerStat
+                label="Active view"
+                value={viewMode === 'list' ? 'Overview' : viewMode === 'create' ? 'Create' : selectedPlan?.name || 'Plan'}
+                accent="#ffe6f0"
+                icon={<ViewKanbanIcon />}
+              />
+              <PlannerStat
+                label="Companies tracked"
+                value={companies.length}
+                accent="#e9f9f3"
+                icon={<BusinessIcon />}
+              />
             </Stack>
           </Stack>
         </Paper>
@@ -378,35 +400,40 @@ export function StudyPlannerPage() {
         )}
 
         {viewMode === 'list' && (
-          <Stack spacing={3}>
-            <QuickPlanRow plans={studyPlans} onSelect={handleSelectPlan} />
+          <Stack spacing={4}>
+            {/* Focus Areas */}
             <TopicSummaryGrid />
-            <StorageInfo
-              onExport={() => {
-                try {
-                  ExportService.exportMultipleStudyPlans(studyPlans);
-                } catch (error) {
-                  console.error('Export failed:', error);
-                  setError('Failed to export study plans');
-                }
+
+            {/* Study Plans */}
+            <StudyPlanList
+              studyPlans={studyPlans}
+              onSelect={handleSelectPlan}
+              onDelete={handleDeletePlan}
+              onCreateNew={handleCreateNew}
+              onRefresh={() => {
+                const existingPlans = studyPlanService.getStudyPlans(userId);
+                setStudyPlans(existingPlans);
               }}
             />
+
+            {/* Storage Info */}
+            <Box sx={{ maxWidth: 600, mx: 'auto', width: '100%', pt: 2 }}>
+              <StorageInfo
+                onExport={() => {
+                  try {
+                    ExportService.exportMultipleStudyPlans(studyPlans);
+                  } catch (error) {
+                    console.error('Export failed:', error);
+                    setError('Failed to export study plans');
+                  }
+                }}
+              />
+            </Box>
           </Stack>
         )}
 
         {/* Main Content */}
-        {viewMode === 'list' && (
-          <StudyPlanList
-            studyPlans={studyPlans}
-            onSelect={handleSelectPlan}
-            onDelete={handleDeletePlan}
-            onCreateNew={handleCreateNew}
-            onRefresh={() => {
-              const existingPlans = studyPlanService.getStudyPlans();
-              setStudyPlans(existingPlans);
-            }}
-          />
-        )}
+        {/* StudyPlanList is now integrated in the flex layout above */}
 
         {viewMode === 'create' && (
           <Box>
@@ -520,24 +547,43 @@ export function StudyPlannerPage() {
 interface PlannerStatProps {
   label: string;
   value: string | number;
+  accent?: string;
+  icon?: React.ReactNode;
 }
 
-function PlannerStat({ label, value }: PlannerStatProps) {
+function PlannerStat({ label, value, accent, icon }: PlannerStatProps) {
   return (
     <Box
       sx={{
         flex: 1,
         p: 2,
         borderRadius: 3,
-        bgcolor: 'rgba(15,23,42,0.04)'
+        bgcolor: accent || 'rgba(15,23,42,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
-      <Typography variant="caption" color="text.secondary">
+      {icon && (
+        <Box sx={{
+          position: 'absolute',
+          right: 12,
+          top: 12,
+          opacity: 0.15,
+          transform: 'scale(1.5)',
+          color: 'primary.main'
+        }}>
+          {icon}
+        </Box>
+      )}
+      <Typography variant="subtitle2" color="text.secondary" sx={{ zIndex: 1, fontWeight: 500 }}>
         {label}
       </Typography>
-      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, zIndex: 1, mt: 0.5 }}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </Typography>
     </Box>
   );
 }
+

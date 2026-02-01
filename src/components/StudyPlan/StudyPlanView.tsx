@@ -50,6 +50,7 @@ import { studyPlanService } from '../../services/studyPlanService';
 import { ExportService } from '../../services/exportService';
 import { StudyProgressDashboard } from './StudyProgressDashboard';
 import { ProblemPreviewDrawer } from '../Common/ProblemPreviewDrawer';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 interface StudyPlanViewProps {
   studyPlan: StudyPlan;
@@ -74,6 +75,8 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
   const [previewProblem, setPreviewProblem] = useState<ProblemData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const progress = studyPlan.progress;
+  const { profile } = useUserProfile();
+  const userId = profile?.pin;
 
   const handlePrintPlan = () => window.print();
 
@@ -139,11 +142,13 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
       studyPlan.id,
       sessionId,
       problemTitle,
-      newStatus
+      newStatus,
+      undefined, // notes argument
+      userId
     );
-    
+
     // Reload the updated plan
-    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id);
+    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id, userId);
     if (updatedPlan) {
       onUpdate(updatedPlan);
     }
@@ -160,16 +165,17 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
 
   const handleSaveNote = () => {
     const { sessionId, problemTitle, currentNotes } = noteDialog;
-    
+
     studyPlanService.updateProblemStatus(
       studyPlan.id,
       sessionId,
       problemTitle,
       'in_progress', // Keep current status, just update notes
-      currentNotes
+      currentNotes,
+      userId
     );
 
-    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id);
+    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id, userId);
     if (updatedPlan) {
       onUpdate(updatedPlan);
     }
@@ -179,19 +185,20 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
 
   const handleToggleBookmark = (sessionId: string, problemTitle: string, currentNotes: string = '') => {
     const isBookmarked = currentNotes.includes('[BOOKMARK]');
-    const newNotes = isBookmarked 
+    const newNotes = isBookmarked
       ? currentNotes.replace('[BOOKMARK]', '').trim()
       : `[BOOKMARK] ${currentNotes}`.trim();
-    
+
     studyPlanService.updateProblemStatus(
       studyPlan.id,
       sessionId,
       problemTitle,
       'in_progress', // Keep current status
-      newNotes
+      newNotes,
+      userId
     );
 
-    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id);
+    const updatedPlan = studyPlanService.getStudyPlan(studyPlan.id, userId);
     if (updatedPlan) {
       onUpdate(updatedPlan);
     }
@@ -236,18 +243,18 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     sessionDate.setHours(0, 0, 0, 0);
-    
+
     return sessionDate < today && !session.completed;
   };
 
   const getSessionStatus = (session: StudySession) => {
     if (session.completed) return 'completed';
     if (isSessionOverdue(session)) return 'overdue';
-    
+
     const today = new Date().toISOString().split('T')[0];
     if (session.date === today) return 'today';
     if (session.date > today) return 'upcoming';
-    
+
     return 'pending';
   };
 
@@ -414,14 +421,14 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
       {/* Tabs for Dashboard and Schedule */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-          <Tab 
-            icon={<DashboardIcon />} 
-            label="Progress Dashboard" 
+          <Tab
+            icon={<DashboardIcon />}
+            label="Progress Dashboard"
             iconPosition="start"
           />
-          <Tab 
-            icon={<ScheduleIcon />} 
-            label="Study Schedule" 
+          <Tab
+            icon={<ScheduleIcon />}
+            label="Study Schedule"
             iconPosition="start"
           />
         </Tabs>
@@ -429,8 +436,8 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
 
       {/* Tab Content */}
       {activeTab === 0 && (
-        <StudyProgressDashboard 
-          studyPlan={studyPlan} 
+        <StudyProgressDashboard
+          studyPlan={studyPlan}
           metrics={metrics}
           onUpdate={onUpdate}
         />
@@ -442,241 +449,241 @@ export function StudyPlanView({ studyPlan, onUpdate, onDelete }: StudyPlanViewPr
             <Typography variant="h6" gutterBottom>
               Study Schedule
             </Typography>
-          
-          {studyPlan.schedule.map((session, index) => {
-            const sessionStatus = getSessionStatus(session);
-            const completedProblems = session.problems.filter(p => p.status === 'completed').length;
-            
-            return (
-              <Accordion
-                key={session.id}
-                expanded={selectedSession === session.id}
-                onChange={(_, isExpanded) => setSelectedSession(isExpanded ? session.id : null)}
-                sx={{
-                  mb: 1,
-                  '&:before': { display: 'none' },
-                  border: sessionStatus === 'overdue' ? '1px solid' : 'none',
-                  borderColor: 'error.main',
-                  bgcolor: sessionStatus === 'today' ? 'action.hover' : 'background.paper'
-                }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1">
-                        Day {index + 1} - {formatDate(session.date)}
-                        {sessionStatus === 'today' && (
-                          <Chip label="Today" size="small" color="primary" sx={{ ml: 1 }} />
-                        )}
-                        {sessionStatus === 'overdue' && (
-                          <Chip label="Overdue" size="small" color="error" sx={{ ml: 1 }} />
-                        )}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {completedProblems}/{session.problems.length} problems completed
-                      </Typography>
+
+            {studyPlan.schedule.map((session, index) => {
+              const sessionStatus = getSessionStatus(session);
+              const completedProblems = session.problems.filter(p => p.status === 'completed').length;
+
+              return (
+                <Accordion
+                  key={session.id}
+                  expanded={selectedSession === session.id}
+                  onChange={(_, isExpanded) => setSelectedSession(isExpanded ? session.id : null)}
+                  sx={{
+                    mb: 1,
+                    '&:before': { display: 'none' },
+                    border: sessionStatus === 'overdue' ? '1px solid' : 'none',
+                    borderColor: 'error.main',
+                    bgcolor: sessionStatus === 'today' ? 'action.hover' : 'background.paper'
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1">
+                          Day {index + 1} - {formatDate(session.date)}
+                          {sessionStatus === 'today' && (
+                            <Chip label="Today" size="small" color="primary" sx={{ ml: 1 }} />
+                          )}
+                          {sessionStatus === 'overdue' && (
+                            <Chip label="Overdue" size="small" color="error" sx={{ ml: 1 }} />
+                          )}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {completedProblems}/{session.problems.length} problems completed
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={(completedProblems / session.problems.length) * 100}
+                          sx={{ width: 100, height: 6, borderRadius: 3 }}
+                        />
+                        {session.completed && <CheckCircleIcon color="success" />}
+                      </Box>
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(completedProblems / session.problems.length) * 100}
-                        sx={{ width: 100, height: 6, borderRadius: 3 }}
-                      />
-                      {session.completed && <CheckCircleIcon color="success" />}
-                    </Box>
-                  </Box>
-                </AccordionSummary>
-                
-                <AccordionDetails>
-                  <List dense>
-                    {session.problems.map((problem, problemIndex) => (
-                      <ListItem key={problemIndex} divider>
-                        <ListItemText
-                          disableTypography
-                          primary={
+                  </AccordionSummary>
+
+                  <AccordionDetails>
+                    <List dense>
+                      {session.problems.map((problem, problemIndex) => (
+                        <ListItem key={problemIndex} divider>
+                          <ListItemText
+                            disableTypography
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body1">
+                                  {problem.title}
+                                </Typography>
+                                <Chip
+                                  label={problem.difficulty}
+                                  size="small"
+                                  color={getDifficultyColor(problem.difficulty)}
+                                />
+                                <Chip
+                                  label={problem.company}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  Topics: {problem.topics.join(', ')}
+                                </Typography>
+
+                                {/* Quality Metrics Display */}
+                                {problem.qualityScore && (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                                    <Chip
+                                      label={`Quality: ${(problem.qualityScore * 100).toFixed(0)}%`}
+                                      size="small"
+                                      color={problem.qualityScore >= 0.8 ? 'success' : problem.qualityScore >= 0.6 ? 'primary' : 'default'}
+                                      variant="outlined"
+                                    />
+
+                                    {problem.qualityTier && problem.qualityTier !== 'Unknown' && (
+                                      <Chip
+                                        label={problem.qualityTier}
+                                        size="small"
+                                        color={
+                                          problem.qualityTier === 'Premium' ? 'success' :
+                                            problem.qualityTier === 'High' ? 'primary' :
+                                              problem.qualityTier === 'Good' ? 'secondary' : 'default'
+                                        }
+                                        variant="outlined"
+                                      />
+                                    )}
+
+                                    {problem.isInterviewClassic && (
+                                      <Chip
+                                        label="Interview Classic"
+                                        size="small"
+                                        color="warning"
+                                        variant="outlined"
+                                      />
+                                    )}
+
+                                    {problem.isHiddenGem && (
+                                      <Chip
+                                        label="Hidden Gem"
+                                        size="small"
+                                        color="success"
+                                        variant="outlined"
+                                      />
+                                    )}
+
+                                    {problem.likes && problem.likes > 0 && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        👍 {problem.likes.toLocaleString()}
+                                      </Typography>
+                                    )}
+
+                                    {problem.acceptanceRate && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        Acceptance: {(problem.acceptanceRate * 100).toFixed(1)}%
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )}
+
+                                {problem.recommendationReason && (
+                                  <Typography variant="caption" color="primary" sx={{ mt: 0.5, display: 'block' }}>
+                                    💡 {problem.recommendationReason}
+                                  </Typography>
+                                )}
+
+                                {problem.notes && (
+                                  <Typography variant="body2" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                                    Notes: {problem.notes}
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                          />
+
+                          <ListItemSecondaryAction>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body1">
-                                {problem.title}
-                              </Typography>
-                              <Chip
-                                label={problem.difficulty}
-                                size="small"
-                                color={getDifficultyColor(problem.difficulty)}
-                              />
-                              <Chip
-                                label={problem.company}
+                              <Tooltip title={problem.notes?.includes('[BOOKMARK]') ? 'Remove bookmark' : 'Add bookmark'}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleToggleBookmark(session.id, problem.title, problem.notes)}
+                                  color={problem.notes?.includes('[BOOKMARK]') ? 'secondary' : 'default'}
+                                >
+                                  {problem.notes?.includes('[BOOKMARK]') ?
+                                    <BookmarkedIcon fontSize="small" /> :
+                                    <BookmarkIcon fontSize="small" />
+                                  }
+                                </IconButton>
+                              </Tooltip>
+
+                              <Tooltip title="Preview problem">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenPreview(problem)}
+                                >
+                                  <ArticleIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+
+                              <Tooltip title="Add notes">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleAddNote(session.id, problem.title, problem.notes)}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+
+                              <Tooltip title={problem.link ? 'Open problem' : 'Problem link unavailable'}>
+                                <span>
+                                  {problem.link ? (
+                                    <IconButton
+                                      size="small"
+                                      component="a"
+                                      href={problem.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <LaunchIcon fontSize="small" />
+                                    </IconButton>
+                                  ) : (
+                                    <IconButton size="small" disabled>
+                                      <LaunchIcon fontSize="small" />
+                                    </IconButton>
+                                  )}
+                                </span>
+                              </Tooltip>
+
+                              <Tooltip title="Mark as completed">
+                                <Checkbox
+                                  checked={problem.status === 'completed'}
+                                  onChange={(e) =>
+                                    handleProblemStatusChange(
+                                      session.id,
+                                      problem.title,
+                                      e.target.checked ? 'completed' : 'not_started'
+                                    )
+                                  }
+                                  icon={getStatusIcon(problem.status)}
+                                  checkedIcon={<CheckCircleIcon color="success" />}
+                                />
+                              </Tooltip>
+
+                              <Button
                                 size="small"
                                 variant="outlined"
-                              />
-                            </Box>
-                          }
-                          secondary={
-                            <Box sx={{ mt: 1 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Topics: {problem.topics.join(', ')}
-                              </Typography>
-                              
-                              {/* Quality Metrics Display */}
-                              {problem.qualityScore && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                                  <Chip
-                                    label={`Quality: ${(problem.qualityScore * 100).toFixed(0)}%`}
-                                    size="small"
-                                    color={problem.qualityScore >= 0.8 ? 'success' : problem.qualityScore >= 0.6 ? 'primary' : 'default'}
-                                    variant="outlined"
-                                  />
-                                  
-                                  {problem.qualityTier && problem.qualityTier !== 'Unknown' && (
-                                    <Chip
-                                      label={problem.qualityTier}
-                                      size="small"
-                                      color={
-                                        problem.qualityTier === 'Premium' ? 'success' :
-                                        problem.qualityTier === 'High' ? 'primary' :
-                                        problem.qualityTier === 'Good' ? 'secondary' : 'default'
-                                      }
-                                      variant="outlined"
-                                    />
-                                  )}
-                                  
-                                  {problem.isInterviewClassic && (
-                                    <Chip
-                                      label="Interview Classic"
-                                      size="small"
-                                      color="warning"
-                                      variant="outlined"
-                                    />
-                                  )}
-                                  
-                                  {problem.isHiddenGem && (
-                                    <Chip
-                                      label="Hidden Gem"
-                                      size="small"
-                                      color="success"
-                                      variant="outlined"
-                                    />
-                                  )}
-                                  
-                                  {problem.likes && problem.likes > 0 && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      👍 {problem.likes.toLocaleString()}
-                                    </Typography>
-                                  )}
-                                  
-                                  {problem.acceptanceRate && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      Acceptance: {(problem.acceptanceRate * 100).toFixed(1)}%
-                                    </Typography>
-                                  )}
-                                </Box>
-                              )}
-                              
-                              {problem.recommendationReason && (
-                                <Typography variant="caption" color="primary" sx={{ mt: 0.5, display: 'block' }}>
-                                  💡 {problem.recommendationReason}
-                                </Typography>
-                              )}
-                              
-                              {problem.notes && (
-                                <Typography variant="body2" sx={{ mt: 0.5, fontStyle: 'italic' }}>
-                                  Notes: {problem.notes}
-                                </Typography>
-                              )}
-                            </Box>
-                          }
-                        />
-                        
-                        <ListItemSecondaryAction>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Tooltip title={problem.notes?.includes('[BOOKMARK]') ? 'Remove bookmark' : 'Add bookmark'}>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleToggleBookmark(session.id, problem.title, problem.notes)}
-                                color={problem.notes?.includes('[BOOKMARK]') ? 'secondary' : 'default'}
-                              >
-                                {problem.notes?.includes('[BOOKMARK]') ? 
-                                  <BookmarkedIcon fontSize="small" /> : 
-                                  <BookmarkIcon fontSize="small" />
+                                color="warning"
+                                onClick={() =>
+                                  handleProblemStatusChange(session.id, problem.title, 'skipped')
                                 }
-                              </IconButton>
-                            </Tooltip>
-
-                            <Tooltip title="Preview problem">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenPreview(problem)}
+                                disabled={problem.status === 'skipped'}
                               >
-                                <ArticleIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            
-                            <Tooltip title="Add notes">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleAddNote(session.id, problem.title, problem.notes)}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            
-                            <Tooltip title={problem.link ? 'Open problem' : 'Problem link unavailable'}>
-                              <span>
-                                {problem.link ? (
-                                  <IconButton
-                                    size="small"
-                                    component="a"
-                                    href={problem.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <LaunchIcon fontSize="small" />
-                                  </IconButton>
-                                ) : (
-                                  <IconButton size="small" disabled>
-                                    <LaunchIcon fontSize="small" />
-                                  </IconButton>
-                                )}
-                              </span>
-                            </Tooltip>
-                            
-                            <Tooltip title="Mark as completed">
-                              <Checkbox
-                                checked={problem.status === 'completed'}
-                                onChange={(e) => 
-                                  handleProblemStatusChange(
-                                    session.id,
-                                    problem.title,
-                                    e.target.checked ? 'completed' : 'not_started'
-                                  )
-                                }
-                                icon={getStatusIcon(problem.status)}
-                                checkedIcon={<CheckCircleIcon color="success" />}
-                              />
-                            </Tooltip>
-                            
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="warning"
-                              onClick={() => 
-                                handleProblemStatusChange(session.id, problem.title, 'skipped')
-                              }
-                              disabled={problem.status === 'skipped'}
-                            >
-                              Skip
-                            </Button>
-                          </Box>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionDetails>
-              </Accordion>
-            );
-          })}
-        </CardContent>
-      </Card>
+                                Skip
+                              </Button>
+                            </Box>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </AccordionDetails>
+                </Accordion>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
 
       {/* Notes Dialog */}
